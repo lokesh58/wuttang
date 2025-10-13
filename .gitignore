@@ -1,0 +1,41 @@
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+install_manifest.txt
+
+# Build directories
+build/
+build-*/
+out/
+cmake-build-*/
+
+# Cache directories
+.cache/
+
+# Generated files
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
