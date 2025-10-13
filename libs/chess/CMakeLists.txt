@@ -8,5 +8,6 @@ target_include_directories(chess
 
 target_sources(chess
     PRIVATE
+        src/move.cpp
         src/position.cpp
 )
