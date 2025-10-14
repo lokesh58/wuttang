@@ -27,17 +27,18 @@ enum class Square : std::uint8_t {
 
 // clang-format on
 
-constexpr Square get_square(File square_file, Rank square_rank) noexcept {
+inline constexpr Square get_square(File square_file,
+                                   Rank square_rank) noexcept {
   return static_cast<Square>((static_cast<std::uint8_t>(square_rank) << 3) |
                              static_cast<std::uint8_t>(square_file));
 }
 
-constexpr File get_square_file(Square square) noexcept {
+inline constexpr File get_square_file(Square square) noexcept {
   // Get remainder from 8
   return static_cast<File>(static_cast<std::uint8_t>(square) & 0x7);
 }
 
-constexpr Rank get_square_rank(Square square) noexcept {
+inline constexpr Rank get_square_rank(Square square) noexcept {
   // Get integer division from 8
   return static_cast<Rank>(static_cast<std::uint8_t>(square) >> 3);
 }

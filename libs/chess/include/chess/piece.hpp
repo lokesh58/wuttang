@@ -49,17 +49,18 @@ enum class Piece : std::uint8_t {
   BLACK_KING = internal::get_piece_encoded_value(Color::BLACK, PieceType::KING),
 };
 
-constexpr Piece get_piece(Color piece_color, PieceType piece_type) noexcept {
+inline constexpr Piece get_piece(Color piece_color,
+                                 PieceType piece_type) noexcept {
   return static_cast<Piece>(
       internal::get_piece_encoded_value(piece_color, piece_type));
 }
 
-constexpr Color get_piece_color(Piece piece) noexcept {
+inline constexpr Color get_piece_color(Piece piece) noexcept {
   return static_cast<Color>(static_cast<std::uint8_t>(piece) >>
                             internal::PIECE_COLOR_SHIFT);
 }
 
-constexpr PieceType get_piece_type(Piece piece) noexcept {
+inline constexpr PieceType get_piece_type(Piece piece) noexcept {
   return static_cast<PieceType>(static_cast<std::uint8_t>(piece) &
                                 internal::PIECE_TYPE_MASK);
 }
