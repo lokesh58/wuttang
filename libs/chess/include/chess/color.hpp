@@ -5,8 +5,8 @@
 namespace chess {
 
 enum class Color : std::uint8_t {
-  WHITE,
-  BLACK,
+    WHITE,
+    BLACK,
 };
 
 }  // namespace chess

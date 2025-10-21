@@ -1,6 +1,6 @@
 #include <print>
 
 int main() {
-  std::println("Chess Engine!");
-  return 0;
+    std::println("Chess Engine!");
+    return 0;
 }
