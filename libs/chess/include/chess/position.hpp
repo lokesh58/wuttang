@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 #include "chess/castling_rights.hpp"
@@ -17,6 +18,8 @@ class Position {
 public:
     Position();
 
+    static Position from_fen(std::string_view fen_string);
+
 private:
     static constexpr std::size_t BOARD_SIZE = 64;
     using Board = std::array<std::optional<Piece>, BOARD_SIZE>;
@@ -25,6 +28,7 @@ private:
         Move move;
         std::optional<Square> en_passant_square;
         CastlingRights castling_rights;
+        std::uint8_t half_move_counter;
     };
 
     Board board_;
