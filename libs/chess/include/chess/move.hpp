@@ -21,39 +21,27 @@ enum class MoveType : std::uint8_t {
 
 class Move {
 public:
-    static Move create_quiet(Square from_square, Square to_square) noexcept;
-    static Move create_capture(
+    static Move quiet(Square from_square, Square to_square) noexcept;
+    static Move capture(
         Square from_square,
         Square to_square,
         Piece captured_piece
     ) noexcept;
-    static Move create_double_pawn_push(
-        Square from_square,
-        Square to_square
-    ) noexcept;
-    static Move create_en_passant(
-        Square from_square,
-        Square to_square
-    ) noexcept;
-    static Move create_promotion(
+    static Move double_pawn_push(Square from_square, Square to_square) noexcept;
+    static Move en_passant(Square from_square, Square to_square) noexcept;
+    static Move promotion(
         Square from_square,
         Square to_square,
         Piece promotion_piece
     ) noexcept;
-    static Move create_promotion_capture(
+    static Move promotion_capture(
         Square from_square,
         Square to_square,
         Piece captured_piece,
         Piece promotion_piece
     ) noexcept;
-    static Move create_castle_kingside(
-        Square from_square,
-        Square to_square
-    ) noexcept;
-    static Move create_castle_queenside(
-        Square from_square,
-        Square to_square
-    ) noexcept;
+    static Move castle_kingside(Square from_square, Square to_square) noexcept;
+    static Move castle_queenside(Square from_square, Square to_square) noexcept;
 
     Square get_from_square() const noexcept;
     Square get_to_square() const noexcept;

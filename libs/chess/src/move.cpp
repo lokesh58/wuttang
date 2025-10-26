@@ -20,7 +20,7 @@ Move::Move(
         captured_piece_(captured_piece),
         promotion_piece_(promotion_piece) {}
 
-Move Move::create_quiet(Square from_square, Square to_square) noexcept {
+Move Move::quiet(Square from_square, Square to_square) noexcept {
     return Move(
         from_square,
         to_square,
@@ -30,7 +30,7 @@ Move Move::create_quiet(Square from_square, Square to_square) noexcept {
     );
 }
 
-Move Move::create_capture(
+Move Move::capture(
     Square from_square,
     Square to_square,
     Piece captured_piece
@@ -44,10 +44,7 @@ Move Move::create_capture(
     );
 }
 
-Move Move::create_double_pawn_push(
-    Square from_square,
-    Square to_square
-) noexcept {
+Move Move::double_pawn_push(Square from_square, Square to_square) noexcept {
     return Move(
         from_square,
         to_square,
@@ -57,7 +54,7 @@ Move Move::create_double_pawn_push(
     );
 }
 
-Move Move::create_en_passant(Square from_square, Square to_square) noexcept {
+Move Move::en_passant(Square from_square, Square to_square) noexcept {
     return Move(
         from_square,
         to_square,
@@ -67,7 +64,7 @@ Move Move::create_en_passant(Square from_square, Square to_square) noexcept {
     );
 }
 
-Move Move::create_promotion(
+Move Move::promotion(
     Square from_square,
     Square to_square,
     Piece promotion_piece
@@ -81,7 +78,7 @@ Move Move::create_promotion(
     );
 }
 
-Move Move::create_promotion_capture(
+Move Move::promotion_capture(
     Square from_square,
     Square to_square,
     Piece captured_piece,
@@ -96,10 +93,7 @@ Move Move::create_promotion_capture(
     );
 }
 
-Move Move::create_castle_kingside(
-    Square from_square,
-    Square to_square
-) noexcept {
+Move Move::castle_kingside(Square from_square, Square to_square) noexcept {
     return Move(
         from_square,
         to_square,
@@ -109,10 +103,7 @@ Move Move::create_castle_kingside(
     );
 }
 
-Move Move::create_castle_queenside(
-    Square from_square,
-    Square to_square
-) noexcept {
+Move Move::castle_queenside(Square from_square, Square to_square) noexcept {
     return Move(
         from_square,
         to_square,
