@@ -21,4 +21,3 @@ Position::Position() noexcept:
         castling_rights_(CastlingRights::NONE) {};
 
 }  // namespace chess
-
