@@ -19,11 +19,19 @@ public:
     static constexpr std::string_view STANDARD_STARTING_FEN =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    static Position standard();
+    static Position standard() noexcept;
     static Position from_fen(std::string_view fen_string);
+
+    std::optional<Piece> get_piece_at(Square square) const noexcept;
+
+    void make_move(const Move& move);
+    void undo_last_move();
 
 private:
     Position() noexcept;
+
+    static bool is_valid_fen(std::string_view fen_string) noexcept;
+    static Position from_valid_fen(std::string_view fen_string);
 
     static constexpr std::size_t BOARD_SIZE = 64;
     using Board = std::array<std::optional<Piece>, BOARD_SIZE>;
@@ -44,3 +52,4 @@ private:
 };
 
 }  // namespace chess
+
