@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 namespace chess {
 
@@ -27,7 +28,7 @@ enum class Square : std::uint8_t {
 
 // clang-format on
 
-inline constexpr Square get_square(
+inline constexpr Square square_from_file_rank(
     File square_file,
     Rank square_rank
 ) noexcept {

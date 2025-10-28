@@ -40,14 +40,14 @@ private:
         Move move;
         std::optional<Square> en_passant_square;
         CastlingRights castling_rights;
-        std::uint8_t half_move_clock;
+        std::uint8_t halfmove_clock;
     };
 
     Board board_;
     Color side_to_move_;
     std::optional<Square> en_passant_square_;
     CastlingRights castling_rights_;
-    std::uint8_t half_move_clock_;
+    std::uint8_t halfmove_clock_;
     std::vector<History> history_;
 };
 
