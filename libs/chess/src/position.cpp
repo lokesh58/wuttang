@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
@@ -27,6 +28,15 @@ Position Position::from_fen(std::string_view fen_string) {
 
 std::optional<Piece> Position::get_piece_at(Square square) const noexcept {
     return board_[static_cast<std::size_t>(square)];
+}
+
+bool Position::is_valid_fen(std::string_view fen_string) noexcept {
+    return true;
+}
+
+Position Position::from_valid_fen(std::string_view fen_string) noexcept {
+    Position position;
+    return position;
 }
 
 }  // namespace chess

@@ -31,7 +31,7 @@ private:
     Position() noexcept;
 
     static bool is_valid_fen(std::string_view fen_string) noexcept;
-    static Position from_valid_fen(std::string_view fen_string);
+    static Position from_valid_fen(std::string_view fen_string) noexcept;
 
     static constexpr std::size_t BOARD_SIZE = 64;
     using Board = std::array<std::optional<Piece>, BOARD_SIZE>;
@@ -52,4 +52,3 @@ private:
 };
 
 }  // namespace chess
-
