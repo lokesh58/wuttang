@@ -35,6 +35,36 @@ std::optional<Piece> Position::get_piece_at(Square square) const noexcept {
     return board_[static_cast<std::size_t>(square)];
 }
 
+Color Position::get_side_to_move() const noexcept {
+    return side_to_move_;
+}
+
+bool Position::has_castling_right(
+    CastlingRights castling_right
+) const noexcept {
+    return (castling_rights_ & castling_right) != CastlingRights::NONE;
+}
+
+bool Position::has_kingside_castling_rights(Color color) const noexcept {
+    auto right = color == Color::WHITE ? CastlingRights::WHITE_KINGSIDE
+                                       : CastlingRights::BLACK_KINGSIDE;
+    return has_castling_right(right);
+}
+
+bool Position::has_queenside_castling_rights(Color color) const noexcept {
+    auto right = color == Color::WHITE ? CastlingRights::WHITE_QUEENSIDE
+                                       : CastlingRights::BLACK_QUEENSIDE;
+    return has_castling_right(right);
+}
+
+std::optional<Square> Position::get_en_passant_square() const noexcept {
+    return en_passant_square_;
+}
+
+std::uint8_t Position::get_halfmove_clock() const noexcept {
+    return halfmove_clock_;
+}
+
 bool Position::is_valid_fen(std::string_view fen_string) noexcept {
     // Split the FEN string into parts using space as a delimiter
     auto it = fen_string.begin();

@@ -23,6 +23,12 @@ public:
     static Position from_fen(std::string_view fen_string);
 
     std::optional<Piece> get_piece_at(Square square) const noexcept;
+    Color get_side_to_move() const noexcept;
+    bool has_castling_right(CastlingRights castling_right) const noexcept;
+    bool has_kingside_castling_rights(Color color) const noexcept;
+    bool has_queenside_castling_rights(Color color) const noexcept;
+    std::optional<Square> get_en_passant_square() const noexcept;
+    std::uint8_t get_halfmove_clock() const noexcept;
 
     void make_move(const Move& move);
     void undo_last_move();
