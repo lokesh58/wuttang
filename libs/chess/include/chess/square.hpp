@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cassert>
+#include <concepts>
 #include <cstdint>
-#include <string_view>
+#include <optional>
 
 namespace chess {
 
@@ -28,24 +30,44 @@ enum class Square : std::uint8_t {
 
 // clang-format on
 
+template<typename T>
+concept FileOrRank = std::same_as<T, File> || std::same_as<T, Rank>;
+
+template<FileOrRank T>
+inline constexpr std::optional<T> shift(T value, std::int8_t delta) noexcept {
+    constexpr std::int8_t min = 0, max = 7;
+    const std::int8_t new_val = static_cast<std::int8_t>(value) + delta;
+
+    if (new_val < min || new_val > max)
+        return std::nullopt;
+
+    return static_cast<T>(new_val);
+}
+
+template<FileOrRank T>
+inline constexpr std::optional<T> shift(
+    std::optional<T> opt,
+    std::int8_t delta
+) noexcept {
+    return opt.has_value() ? shift(*opt, delta) : std::nullopt;
+}
+
 inline constexpr Square square_from_file_rank(
     File square_file,
     Rank square_rank
 ) noexcept {
     return static_cast<Square>(
-        (static_cast<std::uint8_t>(square_rank) << 3) |
+        static_cast<std::uint8_t>(square_rank) * 8 +
         static_cast<std::uint8_t>(square_file)
     );
 }
 
 inline constexpr File get_square_file(Square square) noexcept {
-    // Get remainder from 8
-    return static_cast<File>(static_cast<std::uint8_t>(square) & 0x7);
+    return static_cast<File>(static_cast<std::uint8_t>(square) % 8);
 }
 
 inline constexpr Rank get_square_rank(Square square) noexcept {
-    // Get integer division from 8
-    return static_cast<Rank>(static_cast<std::uint8_t>(square) >> 3);
+    return static_cast<Rank>(static_cast<std::uint8_t>(square) / 8);
 }
 
 }  // namespace chess
