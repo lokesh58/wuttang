@@ -30,9 +30,6 @@ public:
     std::optional<Square> get_en_passant_square() const noexcept;
     std::uint8_t get_halfmove_clock() const noexcept;
 
-    void make_move(const Move& move);
-    void undo_last_move();
-
 private:
     Position() noexcept;
 
