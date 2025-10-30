@@ -76,4 +76,50 @@ inline constexpr Rank get_square_rank(Square square) noexcept {
     return static_cast<Rank>(static_cast<std::uint8_t>(square) / 8);
 }
 
+namespace detail {
+    template<typename EnumType, EnumType beginVal, EnumType endVal>
+    class EnumRange {
+    public:
+        using Underlying = std::underlying_type_t<EnumType>;
+
+        class iterator {
+            Underlying value_;
+
+        public:
+            using iterator_category = std::input_iterator_tag;
+            using value_type = EnumType;
+            using difference_type = std::ptrdiff_t;
+
+            explicit iterator(Underlying start): value_(start) {}
+            iterator& operator++() {
+                ++value_;
+                return *this;
+            }
+            bool operator!=(const iterator& other) const {
+                return value_ != other.value_;
+            }
+            EnumType operator*() const {
+                return static_cast<EnumType>(value_);
+            }
+        };
+
+        EnumRange():
+                begin_(static_cast<Underlying>(beginVal)),
+                end_(static_cast<Underlying>(endVal)) {}
+        iterator begin() const {
+            return iterator(begin_);
+        }
+        iterator end() const {
+            return iterator(end_ + 1);
+        }
+
+    private:
+        Underlying begin_, end_;
+    };
+}  // namespace detail
+
+using FileRange = detail::EnumRange<File, File::FILE_A, File::FILE_H>;
+using RankRange = detail::EnumRange<Rank, Rank::RANK_1, Rank::RANK_8>;
+using SquareRange = detail::EnumRange<Square, Square::A1, Square::H8>;
+
 }  // namespace chess
