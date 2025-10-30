@@ -197,9 +197,10 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         } else if (std::isalpha(c)) {
             Color piece_color = std::isupper(c) ? Color::WHITE : Color::BLACK;
             PieceType piece_type = get_piece_type_from_fen_char(c);
-            position.board_[static_cast<std::size_t>(
-                square_from_file_rank(*placement_file, *placement_rank)
-            )] = get_piece(piece_color, piece_type);
+            position.board_[static_cast<std::size_t>(square_from_file_rank(
+                unwrap(placement_file),
+                unwrap(placement_rank)
+            ))] = get_piece(piece_color, piece_type);
             placement_file = shift(placement_file, 1);
         }
     }
