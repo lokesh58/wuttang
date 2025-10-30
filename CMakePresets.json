@@ -10,6 +10,7 @@
       "name": "debug",
       "displayName": "Debug Build",
       "description": "Debug build with compile commands export",
+      "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -20,6 +21,7 @@
       "name": "release",
       "displayName": "Release Build",
       "description": "Release build with compile commands export",
+      "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -37,6 +39,18 @@
       "name": "release",
       "configurePreset": "release",
       "description": "Build using release configuration"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "description": "Run all tests using debug build",
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "description": "Run all tests using release build"
     }
   ]
 }

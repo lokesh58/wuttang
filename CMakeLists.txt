@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.28)
-
 project(Wuttang VERSION 1.0.0 LANGUAGES CXX)
 
 # Modern C++ standard
@@ -14,15 +13,27 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Add GoogleTest
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
+)
+if(MSVC)
+    # Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+endif()
+FetchContent_MakeAvailable(googletest)
+
+# Enable testing globally
+enable_testing()
+
 # Add subdirectories for libraries
 add_subdirectory(libs/chess)
 
 # Add subdirectory for applications
 add_subdirectory(apps/smart_chessboard)
 add_subdirectory(apps/chess_engine)
-
-# Add subdirectory for tests (optional)
-# add_subdirectory(tests)
 
 # Create symlink for compile_commands.json immediately after configuration
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
