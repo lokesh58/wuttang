@@ -45,7 +45,7 @@
     {
       "name": "debug",
       "configurePreset": "debug",
-      "description": "Run all tests using debug build",
+      "description": "Run all tests using debug build"
     },
     {
       "name": "release",
