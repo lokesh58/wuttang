@@ -3,6 +3,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <iterator>
 #include <optional>
 
 namespace chess {
