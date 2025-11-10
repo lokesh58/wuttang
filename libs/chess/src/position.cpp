@@ -245,7 +245,354 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         position.halfmove_clock_
     );
 
-    return position;
-}
+        return position;
 
-}  // namespace chess
+    }
+
+    
+
+    void Position::make_move(const Move& move) {
+
+        history_.push_back({
+
+            .move = move,
+
+            .en_passant_square = en_passant_square_,
+
+            .castling_rights = castling_rights_,
+
+            .halfmove_clock = halfmove_clock_,
+
+        });
+
+    
+
+        const auto from_square = move.get_from_square();
+
+        const auto to_square = move.get_to_square();
+
+        const auto moving_piece = get_piece_at(from_square);
+
+    
+
+        // Reset halfmove clock on pawn move or capture
+
+        if (get_piece_type(*moving_piece) == PieceType::PAWN ||
+
+            move.get_captured_piece().has_value()) {
+
+            halfmove_clock_ = 0;
+
+        } else {
+
+            halfmove_clock_++;
+
+        }
+
+    
+
+        // Make the move
+
+        board_[static_cast<std::size_t>(to_square)] = moving_piece;
+
+        board_[static_cast<std::size_t>(from_square)] = std::nullopt;
+
+    
+
+        // Handle special moves
+
+        switch (move.get_type()) {
+
+            case MoveType::QUIET:
+
+            case MoveType::CAPTURE:
+
+                break;
+
+            case MoveType::DOUBLE_PAWN_PUSH:
+
+                en_passant_square_ =
+
+                    square_from_file_rank(get_square_file(from_square),
+
+                                          *shift(get_square_rank(from_square), side_to_move_ == Color::WHITE ? 1 : -1));
+
+                break;
+
+            case MoveType::EN_PASSANT:
+
+                {
+
+                    const auto captured_pawn_square = square_from_file_rank(
+
+                        get_square_file(to_square),
+
+                        *shift(get_square_rank(to_square), side_to_move_ == Color::WHITE ? -1 : 1)
+
+                    );
+
+                    board_[static_cast<std::size_t>(captured_pawn_square)] = std::nullopt;
+
+                }
+
+                break;
+
+            case MoveType::PROMOTION:
+
+            case MoveType::PROMOTION_CAPTURE:
+
+                board_[static_cast<std::size_t>(to_square)] =
+
+                    move.get_promotion_piece();
+
+                break;
+
+            case MoveType::CASTLE_KINGSIDE:
+
+                {
+
+                    const auto rook_from = square_from_file_rank(File::FILE_H, get_square_rank(from_square));
+
+                    const auto rook_to = square_from_file_rank(File::FILE_F, get_square_rank(from_square));
+
+                    board_[static_cast<std::size_t>(rook_to)] = get_piece_at(rook_from);
+
+                    board_[static_cast<std::size_t>(rook_from)] = std::nullopt;
+
+                }
+
+                break;
+
+            case MoveType::CASTLE_QUEENSIDE:
+
+                {
+
+                    const auto rook_from = square_from_file_rank(File::FILE_A, get_square_rank(from_square));
+
+                    const auto rook_to = square_from_file_rank(File::FILE_D, get_square_rank(from_square));
+
+                    board_[static_cast<std::size_t>(rook_to)] = get_piece_at(rook_from);
+
+                    board_[static_cast<std::size_t>(rook_from)] = std::nullopt;
+
+                }
+
+                break;
+
+        }
+
+    
+
+        // Update castling rights
+
+        if (get_piece_type(*moving_piece) == PieceType::KING) {
+
+            if (side_to_move_ == Color::WHITE) {
+
+                castling_rights_ &= ~CastlingRights::WHITE_KINGSIDE;
+
+                castling_rights_ &= ~CastlingRights::WHITE_QUEENSIDE;
+
+            } else {
+
+                castling_rights_ &= ~CastlingRights::BLACK_KINGSIDE;
+
+                castling_rights_ &= ~CastlingRights::BLACK_QUEENSIDE;
+
+            }
+
+        } else if (get_piece_type(*moving_piece) == PieceType::ROOK) {
+
+            if (from_square == Square::A1) {
+
+                castling_rights_ &= ~CastlingRights::WHITE_QUEENSIDE;
+
+            } else if (from_square == Square::H1) {
+
+                castling_rights_ &= ~CastlingRights::WHITE_KINGSIDE;
+
+            } else if (from_square == Square::A8) {
+
+                castling_rights_ &= ~CastlingRights::BLACK_QUEENSIDE;
+
+            } else if (from_square == Square::H8) {
+
+                castling_rights_ &= ~CastlingRights::BLACK_KINGSIDE;
+
+            }
+
+        }
+
+        
+
+        if (move.get_captured_piece().has_value() && get_piece_type(*move.get_captured_piece()) == PieceType::ROOK) {
+
+            if (to_square == Square::A1) {
+
+                castling_rights_ &= ~CastlingRights::WHITE_QUEENSIDE;
+
+            } else if (to_square == Square::H1) {
+
+                castling_rights_ &= ~CastlingRights::WHITE_KINGSIDE;
+
+            } else if (to_square == Square::A8) {
+
+                castling_rights_ &= ~CastlingRights::BLACK_QUEENSIDE;
+
+            } else if (to_square == Square::H8) {
+
+                castling_rights_ &= ~CastlingRights::BLACK_KINGSIDE;
+
+            }
+
+        }
+
+    
+
+        // Reset en passant square if it wasn't set by a double pawn push
+
+        if (move.get_type() != MoveType::DOUBLE_PAWN_PUSH) {
+
+            en_passant_square_ = std::nullopt;
+
+        }
+
+    
+
+        side_to_move_ = !side_to_move_;
+
+    }
+
+    
+
+    void Position::undo_last_move() {
+
+        if (history_.empty()) {
+
+            return;
+
+        }
+
+    
+
+        const auto last_history = history_.back();
+
+        history_.pop_back();
+
+    
+
+        const auto& move = last_history.move;
+
+        const auto from_square = move.get_from_square();
+
+        const auto to_square = move.get_to_square();
+
+        auto moving_piece = get_piece_at(to_square); // Note: could be promotion piece
+
+    
+
+        // Restore state
+
+        en_passant_square_ = last_history.en_passant_square;
+
+        castling_rights_ = last_history.castling_rights;
+
+        halfmove_clock_ = last_history.halfmove_clock;
+
+        side_to_move_ = !side_to_move_;
+
+    
+
+        // Undo the move
+
+        if (move.get_type() == MoveType::PROMOTION || move.get_type() == MoveType::PROMOTION_CAPTURE) {
+
+            moving_piece = get_piece(side_to_move_, PieceType::PAWN);
+
+        }
+
+        board_[static_cast<std::size_t>(from_square)] = moving_piece;
+
+        board_[static_cast<std::size_t>(to_square)] = move.get_captured_piece();
+
+    
+
+        // Handle special moves
+
+        switch (move.get_type()) {
+
+            case MoveType::QUIET:
+
+            case MoveType::CAPTURE:
+
+            case MoveType::DOUBLE_PAWN_PUSH:
+
+            case MoveType::PROMOTION:
+
+            case MoveType::PROMOTION_CAPTURE:
+
+                break;
+
+            case MoveType::EN_PASSANT:
+
+                {
+
+                    const auto captured_pawn_square = square_from_file_rank(
+
+                        get_square_file(to_square),
+
+                        *shift(get_square_rank(to_square), side_to_move_ == Color::WHITE ? -1 : 1)
+
+                    );
+
+                    board_[static_cast<std::size_t>(captured_pawn_square)] =
+
+                        get_piece(!side_to_move_, PieceType::PAWN);
+
+                    board_[static_cast<std::size_t>(to_square)] = std::nullopt;
+
+                }
+
+                break;
+
+            case MoveType::CASTLE_KINGSIDE:
+
+                {
+
+                    const auto rook_from = square_from_file_rank(File::FILE_H, get_square_rank(from_square));
+
+                    const auto rook_to = square_from_file_rank(File::FILE_F, get_square_rank(from_square));
+
+                    board_[static_cast<std::size_t>(rook_from)] = get_piece_at(rook_to);
+
+                    board_[static_cast<std::size_t>(rook_to)] = std::nullopt;
+
+                }
+
+                break;
+
+            case MoveType::CASTLE_QUEENSIDE:
+
+                {
+
+                    const auto rook_from = square_from_file_rank(File::FILE_A, get_square_rank(from_square));
+
+                    const auto rook_to = square_from_file_rank(File::FILE_D, get_square_rank(from_square));
+
+                    board_[static_cast<std::size_t>(rook_from)] = get_piece_at(rook_to);
+
+                    board_[static_cast<std::size_t>(rook_to)] = std::nullopt;
+
+                }
+
+                break;
+
+        }
+
+    }
+
+    
+
+    }  // namespace chess
+
+    

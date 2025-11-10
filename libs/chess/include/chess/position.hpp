@@ -30,14 +30,17 @@ public:
     std::optional<Square> get_en_passant_square() const noexcept;
     std::uint8_t get_halfmove_clock() const noexcept;
 
+    void make_move(const Move& move);
+    void undo_last_move();
+
 private:
+    static constexpr std::size_t BOARD_SIZE = 64;
+    using Board = std::array<std::optional<Piece>, BOARD_SIZE>;
+
     Position() noexcept;
 
     static bool is_valid_fen(std::string_view fen_string) noexcept;
     static Position from_valid_fen(std::string_view fen_string) noexcept;
-
-    static constexpr std::size_t BOARD_SIZE = 64;
-    using Board = std::array<std::optional<Piece>, BOARD_SIZE>;
 
     struct History {
         Move move;

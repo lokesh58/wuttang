@@ -32,6 +32,14 @@ inline constexpr CastlingRights operator&(CastlingRights a, CastlingRights b) {
     );
 }
 
+inline constexpr CastlingRights& operator&=(
+    CastlingRights& a,
+    CastlingRights b
+) {
+    a = a & b;
+    return a;
+}
+
 inline constexpr CastlingRights operator~(CastlingRights a) {
     return static_cast<CastlingRights>(~static_cast<std::uint8_t>(a));
 }
