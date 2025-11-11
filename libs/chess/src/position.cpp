@@ -66,7 +66,10 @@ std::uint8_t Position::get_halfmove_clock() const noexcept {
     return halfmove_clock_;
 }
 
-void Position::set_piece_at(Square square, std::optional<Piece> piece) noexcept {
+void Position::set_piece_at(
+    Square square,
+    std::optional<Piece> piece
+) noexcept {
     board_[static_cast<std::size_t>(square)] = piece;
 }
 
@@ -267,9 +270,12 @@ void Position::undo_last_move() {
 
 bool Position::is_valid_move(const Move& move) const noexcept {
     const auto moving_piece = get_piece_at(move.get_from_square());
-    if (!moving_piece) return false;
-    if (get_piece_color(*moving_piece) != side_to_move_) return false;
-    if (get_piece_at(move.get_to_square()) != move.get_captured_piece()) return false;
+    if (!moving_piece)
+        return false;
+    if (get_piece_color(*moving_piece) != side_to_move_)
+        return false;
+    if (get_piece_at(move.get_to_square()) != move.get_captured_piece())
+        return false;
     return true;
 }
 

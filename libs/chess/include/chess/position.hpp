@@ -44,7 +44,7 @@ private:
 
     void set_piece_at(Square square, std::optional<Piece> piece) noexcept;
 
-    bool is_valid_move(const Move &move) const noexcept;
+    bool is_valid_move(const Move& move) const noexcept;
     void add_piece(Square square, Piece piece) noexcept;
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;
