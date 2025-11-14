@@ -260,6 +260,18 @@ void Position::make_move(const Move& move) {
     if (!is_valid_move(move)) {
         throw std::invalid_argument("Invalid Move");
     }
+
+    switch (move.get_type()) {
+        case MoveType::QUIET:
+            move_piece(move.get_from_square(), move.get_to_square());
+            halfmove_clock_ += 1;
+            break;
+        case MoveType::CAPTURE:
+            remove_piece(move.get_to_square());
+            move_piece(move.get_from_square(), move.get_to_square());
+            halfmove_clock_ = 0;
+            break;
+    }
 }
 
 void Position::undo_last_move() {
