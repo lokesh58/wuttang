@@ -261,17 +261,68 @@ void Position::make_move(const Move& move) {
         throw std::invalid_argument("Invalid Move");
     }
 
+    const History new_history_entry{
+        .move = move,
+        .en_passant_square = en_passant_square_,
+        .castling_rights = castling_rights_,
+        .halfmove_clock = halfmove_clock_,
+    };
+
     switch (move.get_type()) {
         case MoveType::QUIET:
             move_piece(move.get_from_square(), move.get_to_square());
+            en_passant_square_ = std::nullopt;
             halfmove_clock_ += 1;
             break;
         case MoveType::CAPTURE:
             remove_piece(move.get_to_square());
             move_piece(move.get_from_square(), move.get_to_square());
+            en_passant_square_ = std::nullopt;
             halfmove_clock_ = 0;
             break;
+        case MoveType::DOUBLE_PAWN_PUSH:
+            move_piece(move.get_from_square(), move.get_to_square());
+            // TODO: Set en_passant_square
+            halfmove_clock_ = 0;
+            break;
+        case MoveType::EN_PASSANT:
+            move_piece(move.get_from_square(), move.get_to_square());
+            // TODO: remove the captured pawn
+            en_passant_square_ = std::nullopt;
+            halfmove_clock_ = 0;
+            break;
+        case MoveType::PROMOTION:
+            remove_piece(move.get_from_square());
+            add_piece(move.get_to_square(), move.get_promotion_piece_unsafe());
+            en_passant_square_ = std::nullopt;
+            halfmove_clock_ = 0;
+            break;
+        case MoveType::PROMOTION_CAPTURE:
+            remove_piece(move.get_from_square());
+            remove_piece(move.get_to_square());
+            add_piece(move.get_to_square(), move.get_promotion_piece_unsafe());
+            en_passant_square_ = std::nullopt;
+            halfmove_clock_ = 0;
+            break;
+        case MoveType::CASTLE_KINGSIDE:
+            move_piece(move.get_from_square(), move.get_to_square());
+            // TODO: move appropriate rook
+            en_passant_square_ = std::nullopt;
+            halfmove_clock_ += 1;
+            break;
+        case MoveType::CASTLE_QUEENSIDE:
+            move_piece(move.get_from_square(), move.get_to_square());
+            // TODO: move appropriate rook
+            en_passant_square_ = std::nullopt;
+            halfmove_clock_ += 1;
+            break;
     }
+
+    // TODO: Handle updates to castling_rights
+
+    side_to_move_ = invert(side_to_move_);
+
+    history_.push_back(new_history_entry);
 }
 
 void Position::undo_last_move() {
