@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <iterator>
@@ -51,12 +50,6 @@ inline constexpr std::optional<T> shift(
     std::int8_t delta
 ) noexcept {
     return opt.has_value() ? shift(*opt, delta) : std::nullopt;
-}
-
-template<FileOrRank T>
-inline constexpr T unwrap(std::optional<T> opt) noexcept {
-    assert(opt.has_value());
-    return *opt;
 }
 
 inline constexpr Square square_from_file_rank(

@@ -10,6 +10,10 @@ target_sources(chess
         src/move.cpp
         src/position.cpp
 )
+target_link_libraries(chess
+    PRIVATE
+        utils
+)
 
 # Add chess_tests executable
 add_executable(chess_tests)

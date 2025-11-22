@@ -30,6 +30,7 @@ enable_testing()
 
 # Add subdirectories for libraries
 add_subdirectory(libs/chess)
+add_subdirectory(libs/utils)
 
 # Add subdirectory for applications
 add_subdirectory(apps/smart_chessboard)
