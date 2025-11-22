@@ -283,12 +283,18 @@ void Position::make_move(const Move& move) {
             break;
         case MoveType::DOUBLE_PAWN_PUSH:
             move_piece(move.get_from_square(), move.get_to_square());
-            // TODO: Set en_passant_square
+            en_passant_square_ = square_from_file_rank(
+                get_square_file(move.get_to_square()),
+                side_to_move_ == Color::WHITE ? Rank::RANK_3 : Rank::RANK_6
+            );
             halfmove_clock_ = 0;
             break;
         case MoveType::EN_PASSANT:
             move_piece(move.get_from_square(), move.get_to_square());
-            // TODO: remove the captured pawn
+            remove_piece(square_from_file_rank(
+                get_square_file(move.get_to_square()),
+                side_to_move_ == Color::WHITE ? Rank::RANK_5 : Rank::RANK_4
+            ));
             en_passant_square_ = std::nullopt;
             halfmove_clock_ = 0;
             break;
@@ -307,19 +313,65 @@ void Position::make_move(const Move& move) {
             break;
         case MoveType::CASTLE_KINGSIDE:
             move_piece(move.get_from_square(), move.get_to_square());
-            // TODO: move appropriate rook
+            move_piece(
+                square_from_file_rank(
+                    File::FILE_H,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                ),
+                square_from_file_rank(
+                    File::FILE_F,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                )
+            );
             en_passant_square_ = std::nullopt;
             halfmove_clock_ += 1;
             break;
         case MoveType::CASTLE_QUEENSIDE:
             move_piece(move.get_from_square(), move.get_to_square());
-            // TODO: move appropriate rook
+            move_piece(
+                square_from_file_rank(
+                    File::FILE_A,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                ),
+                square_from_file_rank(
+                    File::FILE_D,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                )
+            );
             en_passant_square_ = std::nullopt;
             halfmove_clock_ += 1;
             break;
     }
 
-    // TODO: Handle updates to castling_rights
+    const auto moved_piece_type =
+        get_piece_type(utils::unwrap(get_piece_at(move.get_from_square())));
+    switch (moved_piece_type) {
+        case PieceType::KING: {
+            const auto right_to_remove = side_to_move_ == Color::WHITE
+                                             ? CastlingRights::WHITE_ALL
+                                             : CastlingRights::BLACK_ALL;
+            castling_rights_ &= ~right_to_remove;
+        } break;
+        case PieceType::ROOK: {
+            const auto right_to_remove = [&]() {
+                const auto rook_file = get_square_file(move.get_from_square());
+                if (rook_file == File::FILE_A) {
+                    return side_to_move_ == Color::WHITE
+                               ? CastlingRights::WHITE_QUEENSIDE
+                               : CastlingRights::BLACK_QUEENSIDE;
+                } else if (rook_file == File::FILE_H) {
+                    return side_to_move_ == Color::WHITE
+                               ? CastlingRights::WHITE_KINGSIDE
+                               : CastlingRights::BLACK_KINGSIDE;
+                }
+                return CastlingRights::NONE;
+            }();
+            castling_rights_ &= ~right_to_remove;
+        } break;
+        default:
+            // No updates to castling rights
+            break;
+    }
 
     side_to_move_ = invert(side_to_move_);
 
