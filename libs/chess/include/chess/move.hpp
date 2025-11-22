@@ -47,9 +47,7 @@ public:
     Square get_to_square() const noexcept;
     MoveType get_type() const noexcept;
     std::optional<Piece> get_captured_piece() const noexcept;
-    Piece get_captured_piece_unsafe() const;
     std::optional<Piece> get_promotion_piece() const noexcept;
-    Piece get_promotion_piece_unsafe() const;
 
 private:
     Move(

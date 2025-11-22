@@ -300,14 +300,20 @@ void Position::make_move(const Move& move) {
             break;
         case MoveType::PROMOTION:
             remove_piece(move.get_from_square());
-            add_piece(move.get_to_square(), move.get_promotion_piece_unsafe());
+            add_piece(
+                move.get_to_square(),
+                utils::unwrap(move.get_promotion_piece())
+            );
             en_passant_square_ = std::nullopt;
             halfmove_clock_ = 0;
             break;
         case MoveType::PROMOTION_CAPTURE:
             remove_piece(move.get_from_square());
             remove_piece(move.get_to_square());
-            add_piece(move.get_to_square(), move.get_promotion_piece_unsafe());
+            add_piece(
+                move.get_to_square(),
+                utils::unwrap(move.get_promotion_piece())
+            );
             en_passant_square_ = std::nullopt;
             halfmove_clock_ = 0;
             break;
@@ -382,6 +388,86 @@ void Position::undo_last_move() {
     if (!history_.size()) {
         throw std::runtime_error("No moves to undo");
     }
+
+    const auto& last_history_entry = history_.back();
+
+    side_to_move_ = invert(side_to_move_);
+    en_passant_square_ = last_history_entry.en_passant_square;
+    castling_rights_ = last_history_entry.castling_rights;
+    halfmove_clock_ = last_history_entry.halfmove_clock;
+
+    const auto& move = last_history_entry.move;
+    switch (move.get_type()) {
+        case MoveType::QUIET:
+            move_piece(move.get_to_square(), move.get_from_square());
+            break;
+        case MoveType::CAPTURE:
+            move_piece(move.get_to_square(), move.get_from_square());
+            add_piece(
+                move.get_to_square(),
+                utils::unwrap(move.get_captured_piece())
+            );
+            break;
+        case MoveType::DOUBLE_PAWN_PUSH:
+            move_piece(move.get_to_square(), move.get_from_square());
+            break;
+        case MoveType::EN_PASSANT:
+            add_piece(
+                square_from_file_rank(
+                    get_square_file(move.get_to_square()),
+                    side_to_move_ == Color::WHITE ? Rank::RANK_5 : Rank::RANK_4
+                ),
+                get_piece(invert(side_to_move_), PieceType::PAWN)
+            );
+            move_piece(move.get_to_square(), move.get_from_square());
+            break;
+        case MoveType::PROMOTION:
+            remove_piece(move.get_to_square());
+            add_piece(
+                move.get_from_square(),
+                get_piece(side_to_move_, PieceType::PAWN)
+            );
+            break;
+        case MoveType::PROMOTION_CAPTURE:
+            remove_piece(move.get_to_square());
+            add_piece(
+                move.get_to_square(),
+                utils::unwrap(move.get_captured_piece())
+            );
+            add_piece(
+                move.get_from_square(),
+                get_piece(side_to_move_, PieceType::PAWN)
+            );
+            break;
+        case MoveType::CASTLE_KINGSIDE:
+            move_piece(
+                square_from_file_rank(
+                    File::FILE_F,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                ),
+                square_from_file_rank(
+                    File::FILE_H,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                )
+            );
+            move_piece(move.get_to_square(), move.get_from_square());
+            break;
+        case MoveType::CASTLE_QUEENSIDE:
+            move_piece(
+                square_from_file_rank(
+                    File::FILE_D,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                ),
+                square_from_file_rank(
+                    File::FILE_A,
+                    side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+                )
+            );
+            move_piece(move.get_to_square(), move.get_from_square());
+            break;
+    }
+
+    history_.pop_back();
 }
 
 bool Position::is_valid_move(const Move& move) const noexcept {

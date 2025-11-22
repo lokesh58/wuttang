@@ -129,16 +129,8 @@ std::optional<Piece> Move::get_captured_piece() const noexcept {
     return captured_piece_;
 }
 
-Piece Move::get_captured_piece_unsafe() const {
-    return captured_piece_.value();
-}
-
 std::optional<Piece> Move::get_promotion_piece() const noexcept {
     return promotion_piece_;
-}
-
-Piece Move::get_promotion_piece_unsafe() const {
-    return promotion_piece_.value();
 }
 
 }  // namespace chess
