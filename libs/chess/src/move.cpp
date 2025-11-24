@@ -7,6 +7,19 @@
 
 namespace chess {
 
+Move::Move() noexcept:
+        Move(
+            Square::A1,
+            Square::A1,
+            MoveType::NULL_MOVE,
+            std::nullopt,
+            std::nullopt
+        ) {}
+
+Move Move::null() noexcept {
+    return Move();
+}
+
 Move::Move(
     Square from_square,
     Square to_square,

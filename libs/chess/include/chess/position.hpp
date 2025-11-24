@@ -9,6 +9,7 @@
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
 #include "chess/move.hpp"
+#include "chess/move_list.hpp"
 #include "chess/piece.hpp"
 #include "chess/square.hpp"
 
@@ -32,6 +33,8 @@ public:
 
     void make_move(const Move& move);
     void undo_last_move();
+
+    MoveList generate_legal_moves() const noexcept;
 
 private:
     static constexpr std::size_t BOARD_SIZE = 64;

@@ -13,6 +13,7 @@
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
 #include "chess/move.hpp"
+#include "chess/move_list.hpp"
 #include "chess/piece.hpp"
 #include "chess/square.hpp"
 
@@ -493,6 +494,11 @@ void Position::move_piece(Square from_square, Square to_square) noexcept {
     const auto moving_piece = get_piece_at(from_square);
     set_piece_at(from_square, std::nullopt);
     set_piece_at(to_square, moving_piece);
+}
+
+MoveList Position::generate_legal_moves() const noexcept {
+    MoveList moves;
+    return moves;
 }
 
 }  // namespace chess

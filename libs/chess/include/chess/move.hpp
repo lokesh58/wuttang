@@ -9,6 +9,7 @@
 namespace chess {
 
 enum class MoveType : std::uint8_t {
+    NULL_MOVE,
     QUIET,
     CAPTURE,
     DOUBLE_PAWN_PUSH,
@@ -21,6 +22,7 @@ enum class MoveType : std::uint8_t {
 
 class Move {
 public:
+    static Move null() noexcept;
     static Move quiet(Square from_square, Square to_square) noexcept;
     static Move capture(
         Square from_square,
@@ -42,6 +44,8 @@ public:
     ) noexcept;
     static Move castle_kingside(Square from_square, Square to_square) noexcept;
     static Move castle_queenside(Square from_square, Square to_square) noexcept;
+
+    Move() noexcept;
 
     Square get_from_square() const noexcept;
     Square get_to_square() const noexcept;
