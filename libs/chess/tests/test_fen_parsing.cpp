@@ -212,3 +212,10 @@ TEST_F(FenParsingTest, ThrowsOnInvalidFEN) {
         std::invalid_argument
     ) << "Invalid halfmove clock (too high).";
 }
+
+TEST_F(FenParsingTest, LegalMovesInStandardPosition) {
+    const auto pos = Position::standard();
+    const auto moves = pos.generate_legal_moves();
+    EXPECT_EQ(moves.size(), 20);
+}
+

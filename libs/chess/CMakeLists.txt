@@ -8,7 +8,9 @@ target_include_directories(chess
 target_sources(chess
     PRIVATE
         src/move.cpp
+        src/piece.cpp
         src/position.cpp
+        src/square.cpp
 )
 target_link_libraries(chess
     PRIVATE
@@ -20,6 +22,9 @@ add_executable(chess_tests)
 target_sources(chess_tests
     PRIVATE
         tests/test_fen_parsing.cpp
+        tests/test_move_generation.cpp
+        tests/test_make_and_undo.cpp
+        tests/test_iterators.cpp
 )
 target_link_libraries(chess_tests
     PRIVATE

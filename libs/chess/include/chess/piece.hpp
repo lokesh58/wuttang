@@ -72,4 +72,6 @@ inline constexpr PieceType get_piece_type(Piece piece) noexcept {
     );
 }
 
+char get_piece_char(Piece piece) noexcept;
+
 }  // namespace chess
