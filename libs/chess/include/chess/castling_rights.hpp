@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <utils/enum_flags.hpp>
 
 namespace chess {
 
@@ -12,38 +13,16 @@ enum class CastlingRights : std::uint8_t {
     BLACK_KINGSIDE = 1 << 2,
     BLACK_QUEENSIDE = 1 << 3,
     BLACK_ALL = BLACK_KINGSIDE | BLACK_QUEENSIDE,
+    ALL = WHITE_ALL | BLACK_ALL,
 };
 
-inline constexpr CastlingRights operator|(CastlingRights a, CastlingRights b) {
-    return static_cast<CastlingRights>(
-        static_cast<std::uint8_t>(a) | static_cast<std::uint8_t>(b)
-    );
-}
-
-inline constexpr CastlingRights& operator|=(
-    CastlingRights& a,
-    CastlingRights b
-) {
-    a = a | b;
-    return a;
-}
-
-inline constexpr CastlingRights operator&(CastlingRights a, CastlingRights b) {
-    return static_cast<CastlingRights>(
-        static_cast<std::uint8_t>(a) & static_cast<std::uint8_t>(b)
-    );
-}
-
-inline constexpr CastlingRights& operator&=(
-    CastlingRights& a,
-    CastlingRights b
-) {
-    a = a & b;
-    return a;
-}
-
-inline constexpr CastlingRights operator~(CastlingRights a) {
-    return static_cast<CastlingRights>(~static_cast<std::uint8_t>(a));
-}
-
 }  // namespace chess
+
+namespace utils {
+
+template<>
+struct enable_bitmask_operators<chess::CastlingRights> {
+    static constexpr bool value = true;
+};
+
+}  // namespace utils
