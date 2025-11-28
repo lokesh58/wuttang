@@ -1,9 +1,9 @@
 #pragma once
 
-#include <concepts>
 #include <cstdint>
-#include <iterator>
-#include <optional>
+#include <string>
+#include <utils/enum_range.hpp>
+#include <utils/enum_shift.hpp>
 
 namespace chess {
 
@@ -11,10 +11,14 @@ namespace chess {
 
 enum class File : std::uint8_t {
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
+    FILE_CNT,
+    FILE_INVALID = FILE_CNT,
 };
 
 enum class Rank : std::uint8_t {
     RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
+    RANK_CNT,
+    RANK_INVALID = RANK_CNT,
 };
 
 enum class Square : std::uint8_t {
@@ -26,123 +30,84 @@ enum class Square : std::uint8_t {
     A6, B6, C6, D6, E6, F6, G6, H6,
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8,
+    NO_SQ,
 };
 
 // clang-format on
 
-template<typename T>
-concept FileOrRank = std::same_as<T, File> || std::same_as<T, Rank>;
+}  // namespace chess
 
-template<FileOrRank T>
-inline constexpr std::optional<T> shift(T value, std::int8_t delta) noexcept {
-    constexpr std::int8_t min = 0, max = 7;
-    const std::int8_t new_val = static_cast<std::int8_t>(value) + delta;
+namespace utils {
 
-    if (new_val < min || new_val > max)
-        return std::nullopt;
+template<>
+struct EnumTraits<chess::File> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = chess::File::FILE_A;
+    static constexpr auto max = chess::File::FILE_H;
+    static constexpr auto sentinel = chess::File::FILE_INVALID;
+};
 
-    return static_cast<T>(new_val);
-}
+template<>
+struct EnumTraits<chess::Rank> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = chess::Rank::RANK_1;
+    static constexpr auto max = chess::Rank::RANK_8;
+    static constexpr auto sentinel = chess::Rank::RANK_INVALID;
+};
 
-template<FileOrRank T>
-inline constexpr std::optional<T> shift(
-    std::optional<T> opt,
-    std::int8_t delta
-) noexcept {
-    return opt.has_value() ? shift(*opt, delta) : std::nullopt;
-}
+template<>
+struct EnumTraits<chess::Square> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = chess::Square::A1;
+    static constexpr auto max = chess::Square::H8;
+    static constexpr auto sentinel = chess::Square::NO_SQ;
+};
+
+}  // namespace utils
+
+namespace chess {
+
+// Expose shift in chess namespace
+using utils::shift;
 
 inline constexpr Square square_from_file_rank(
     File square_file,
     Rank square_rank
 ) noexcept {
     return static_cast<Square>(
-        static_cast<std::uint8_t>(square_rank) * 8 +
+        static_cast<std::uint8_t>(square_rank) *
+            static_cast<std::uint8_t>(File::FILE_CNT) +
         static_cast<std::uint8_t>(square_file)
     );
 }
 
 inline constexpr File get_square_file(Square square) noexcept {
-    return static_cast<File>(static_cast<std::uint8_t>(square) % 8);
+    return static_cast<File>(
+        static_cast<std::uint8_t>(square) %
+        static_cast<std::uint8_t>(File::FILE_CNT)
+    );
 }
 
 inline constexpr Rank get_square_rank(Square square) noexcept {
-    return static_cast<Rank>(static_cast<std::uint8_t>(square) / 8);
+    return static_cast<Rank>(
+        static_cast<std::uint8_t>(square) /
+        static_cast<std::uint8_t>(File::FILE_CNT)
+    );
 }
 
-namespace detail {
-    template<typename EnumType, EnumType beginVal, EnumType endVal>
-    class EnumRange {
-    public:
-        using Underlying = std::underlying_type_t<EnumType>;
+using FileRange = utils::EnumRange<File, File::FILE_A, File::FILE_H>;
+using RankRange = utils::EnumRange<Rank, Rank::RANK_1, Rank::RANK_8>;
+using SquareRange = utils::EnumRange<Square, Square::A1, Square::H8>;
 
-        class iterator {
-            Underlying value_;
+inline std::string to_string(Square s) noexcept {
+    const auto file = get_square_file(s);
+    const auto rank = get_square_rank(s);
 
-        public:
-            using iterator_category = std::bidirectional_iterator_tag;
-            using value_type = EnumType;
-            using difference_type = std::ptrdiff_t;
-            using pointer = EnumType*;
-            using reference = EnumType&;
+    std::string str = "??";
+    str[0] = static_cast<char>('a' + static_cast<int>(file));
+    str[1] = static_cast<char>('1' + static_cast<int>(rank));
 
-            iterator() : value_(static_cast<Underlying>(beginVal)) {}
-            explicit iterator(Underlying start) : value_(start) {}
-
-            iterator& operator++() {
-                ++value_;
-                return *this;
-            }
-            iterator operator++(int) {
-                iterator tmp = *this;
-                ++value_;
-                return tmp;
-            }
-            iterator& operator--() {
-                --value_;
-                return *this;
-            }
-            iterator operator--(int) {
-                iterator tmp = *this;
-                --value_;
-                return tmp;
-            }
-            bool operator!=(const iterator& other) const {
-                return value_ != other.value_;
-            }
-            bool operator==(const iterator& other) const {
-                return value_ == other.value_;
-            }
-            EnumType operator*() const {
-                return static_cast<EnumType>(value_);
-            }
-        };
-
-        EnumRange() :
-            begin_(static_cast<Underlying>(beginVal)),
-            end_(static_cast<Underlying>(endVal)) {}
-        iterator begin() const {
-            return iterator(begin_);
-        }
-        iterator end() const {
-            return iterator(end_ + 1);
-        }
-        std::reverse_iterator<iterator> rbegin() const {
-            return std::reverse_iterator<iterator>(end());
-        }
-        std::reverse_iterator<iterator> rend() const {
-            return std::reverse_iterator<iterator>(begin());
-        }
-
-    private:
-        Underlying begin_, end_;
-    };
-}  // namespace detail
-
-using FileRange = detail::EnumRange<File, File::FILE_A, File::FILE_H>;
-using RankRange = detail::EnumRange<Rank, Rank::RANK_1, Rank::RANK_8>;
-using SquareRange = detail::EnumRange<Square, Square::A1, Square::H8>;
-
-std::string to_string(Square s) noexcept;
+    return str;
+}
 
 }  // namespace chess

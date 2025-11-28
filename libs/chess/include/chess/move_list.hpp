@@ -9,8 +9,6 @@
 namespace chess {
 
 class MoveList {
-    // The theoretical max moves in a chess position is 218.
-    // We use 256 for alignment and safety.
     static constexpr std::size_t MAX_MOVES = 256;
 
 public:
@@ -21,7 +19,6 @@ public:
 
     MoveList() noexcept = default;
 
-    // Push a move without checking capacity (we know 256 is enough)
     void push_back(const Move& move) noexcept {
         assert(count_ < MAX_MOVES);
         moves_[count_++] = move;
@@ -32,6 +29,7 @@ public:
     std::size_t size() const noexcept {
         return count_;
     }
+
     [[nodiscard]]
     bool empty() const noexcept {
         return count_ == 0;
@@ -42,14 +40,17 @@ public:
     iterator begin() noexcept {
         return moves_.data();
     }
+
     [[nodiscard]]
     iterator end() noexcept {
         return moves_.data() + count_;
     }
+
     [[nodiscard]]
     const_iterator begin() const noexcept {
         return moves_.data();
     }
+
     [[nodiscard]]
     const_iterator end() const noexcept {
         return moves_.data() + count_;
@@ -60,6 +61,7 @@ public:
     Move& operator[](std::size_t index) noexcept {
         return moves_[index];
     }
+
     [[nodiscard]]
     const Move& operator[](std::size_t index) const noexcept {
         return moves_[index];

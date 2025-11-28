@@ -1,16 +1,14 @@
 #include "chess/position.hpp"
 
-#include <string>
 #include <cassert>
 #include <cctype>
 #include <charconv>
 #include <cstddef>
-#include <optional>
 #include <ranges>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <system_error>
-#include <utils/optional.hpp>
 
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
@@ -21,9 +19,15 @@
 
 namespace chess {
 
-Position::Position() noexcept:
+Position::Position() noexcept :
+        board_{},  // First, as declared first
         side_to_move_(Color::WHITE),
-        castling_rights_(CastlingRights::NONE) {};
+        en_passant_square_(Square::NO_SQ),  // Initialize en_passant_square_
+        castling_rights_(CastlingRights::NONE),
+        halfmove_clock_(0)  // Initialize halfmove_clock_
+{
+    board_.fill(Piece::NONE);
+};
 
 Position Position::standard() noexcept {
     return from_valid_fen(STANDARD_STARTING_FEN);
@@ -36,7 +40,7 @@ Position Position::from_fen(std::string_view fen_string) {
     return from_valid_fen(fen_string);
 }
 
-std::optional<Piece> Position::get_piece_at(Square square) const noexcept {
+Piece Position::get_piece_at(Square square) const noexcept {
     return board_[static_cast<std::size_t>(square)];
 }
 
@@ -62,7 +66,7 @@ bool Position::has_queenside_castling_rights(Color color) const noexcept {
     return has_castling_right(right);
 }
 
-std::optional<Square> Position::get_en_passant_square() const noexcept {
+Square Position::get_en_passant_square() const noexcept {
     return en_passant_square_;
 }
 
@@ -70,10 +74,7 @@ std::uint8_t Position::get_halfmove_clock() const noexcept {
     return halfmove_clock_;
 }
 
-void Position::set_piece_at(
-    Square square,
-    std::optional<Piece> piece
-) noexcept {
+void Position::set_piece_at(Square square, Piece piece) noexcept {
     board_[static_cast<std::size_t>(square)] = piece;
 }
 
@@ -197,22 +198,25 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
 
     // 1. Piece placement
     std::string_view piece_placement = extract_part(' ');
-    std::optional<Rank> placement_rank = Rank::RANK_8;
-    std::optional<File> placement_file = File::FILE_A;
+    Rank placement_rank = Rank::RANK_8;
+    File placement_file = File::FILE_A;
     for (char c : piece_placement) {
         if (c == '/') {
             placement_rank = shift(placement_rank, -1);
             placement_file = File::FILE_A;
         } else if (std::isdigit(c)) {
             std::size_t empty_squares = c - '0';
-            placement_file = shift(placement_file, empty_squares);
+            placement_file =
+                shift(placement_file, static_cast<int>(empty_squares));
         } else if (std::isalpha(c)) {
             Color piece_color = std::isupper(c) ? Color::WHITE : Color::BLACK;
             PieceType piece_type = get_piece_type_from_fen_char(c);
-            position.board_[static_cast<std::size_t>(square_from_file_rank(
-                utils::unwrap(placement_file),
-                utils::unwrap(placement_rank)
-            ))] = get_piece(piece_color, piece_type);
+            if (placement_file != File::FILE_INVALID &&
+                placement_rank != Rank::RANK_INVALID) {
+                position.board_[static_cast<std::size_t>(
+                    square_from_file_rank(placement_file, placement_rank)
+                )] = get_piece(piece_color, piece_type);
+            }
             placement_file = shift(placement_file, 1);
         }
     }
@@ -247,6 +251,8 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         const auto file = static_cast<File>(en_passant[0] - 'a');
         const auto rank = static_cast<Rank>(en_passant[1] - '1');
         position.en_passant_square_ = square_from_file_rank(file, rank);
+    } else {
+        position.en_passant_square_ = Square::NO_SQ;
     }
 
     // 5. Halfmove clock
@@ -265,8 +271,7 @@ void Position::make_move(const Move& move) {
         throw std::invalid_argument("Invalid Move");
     }
 
-    const auto moved_piece =
-        utils::unwrap(get_piece_at(move.get_from_square()));
+    const auto moved_piece = get_piece_at(move.get_from_square());
 
     const History new_history_entry{
         .move = move,
@@ -278,13 +283,13 @@ void Position::make_move(const Move& move) {
     switch (move.get_type()) {
         case MoveType::QUIET:
             move_piece(move.get_from_square(), move.get_to_square());
-            en_passant_square_ = std::nullopt;
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ += 1;
             break;
         case MoveType::CAPTURE:
             remove_piece(move.get_to_square());
             move_piece(move.get_from_square(), move.get_to_square());
-            en_passant_square_ = std::nullopt;
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ = 0;
             break;
         case MoveType::DOUBLE_PAWN_PUSH:
@@ -301,26 +306,20 @@ void Position::make_move(const Move& move) {
                 get_square_file(move.get_to_square()),
                 side_to_move_ == Color::WHITE ? Rank::RANK_5 : Rank::RANK_4
             ));
-            en_passant_square_ = std::nullopt;
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ = 0;
             break;
         case MoveType::PROMOTION:
             remove_piece(move.get_from_square());
-            add_piece(
-                move.get_to_square(),
-                utils::unwrap(move.get_promotion_piece())
-            );
-            en_passant_square_ = std::nullopt;
+            add_piece(move.get_to_square(), move.get_promotion_piece());
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ = 0;
             break;
         case MoveType::PROMOTION_CAPTURE:
             remove_piece(move.get_from_square());
             remove_piece(move.get_to_square());
-            add_piece(
-                move.get_to_square(),
-                utils::unwrap(move.get_promotion_piece())
-            );
-            en_passant_square_ = std::nullopt;
+            add_piece(move.get_to_square(), move.get_promotion_piece());
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ = 0;
             break;
         case MoveType::CASTLE_KINGSIDE:
@@ -335,7 +334,7 @@ void Position::make_move(const Move& move) {
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 )
             );
-            en_passant_square_ = std::nullopt;
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ += 1;
             break;
         case MoveType::CASTLE_QUEENSIDE:
@@ -350,11 +349,11 @@ void Position::make_move(const Move& move) {
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 )
             );
-            en_passant_square_ = std::nullopt;
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ += 1;
             break;
         case MoveType::NULL_MOVE:
-            en_passant_square_ = std::nullopt;
+            en_passant_square_ = Square::NO_SQ;
             halfmove_clock_ += 1;
             break;
     }
@@ -412,10 +411,7 @@ void Position::undo_last_move() {
             break;
         case MoveType::CAPTURE:
             move_piece(move.get_to_square(), move.get_from_square());
-            add_piece(
-                move.get_to_square(),
-                utils::unwrap(move.get_captured_piece())
-            );
+            add_piece(move.get_to_square(), move.get_captured_piece());
             break;
         case MoveType::DOUBLE_PAWN_PUSH:
             move_piece(move.get_to_square(), move.get_from_square());
@@ -439,10 +435,7 @@ void Position::undo_last_move() {
             break;
         case MoveType::PROMOTION_CAPTURE:
             remove_piece(move.get_to_square());
-            add_piece(
-                move.get_to_square(),
-                utils::unwrap(move.get_captured_piece())
-            );
+            add_piece(move.get_to_square(), move.get_captured_piece());
             add_piece(
                 move.get_from_square(),
                 get_piece(side_to_move_, PieceType::PAWN)
@@ -483,9 +476,9 @@ void Position::undo_last_move() {
 
 bool Position::is_valid_move(const Move& move) const noexcept {
     const auto moving_piece = get_piece_at(move.get_from_square());
-    if (!moving_piece)
+    if (moving_piece == Piece::NONE)
         return false;
-    if (get_piece_color(*moving_piece) != side_to_move_)
+    if (get_piece_color(moving_piece) != side_to_move_)
         return false;
     if (get_piece_at(move.get_to_square()) != move.get_captured_piece())
         return false;
@@ -497,12 +490,12 @@ void Position::add_piece(Square square, Piece piece) noexcept {
 }
 
 void Position::remove_piece(Square square) noexcept {
-    set_piece_at(square, std::nullopt);
+    set_piece_at(square, Piece::NONE);
 }
 
 void Position::move_piece(Square from_square, Square to_square) noexcept {
     const auto moving_piece = get_piece_at(from_square);
-    set_piece_at(from_square, std::nullopt);
+    set_piece_at(from_square, Piece::NONE);
     set_piece_at(to_square, moving_piece);
 }
 
@@ -533,7 +526,7 @@ void Position::generate_pawn_moves(MoveList& moves, Square start_square) const {
     auto one_step_square =
         square_from_file_rank(get_square_file(start_square), target_rank_);
 
-    if (!get_piece_at(one_step_square)) {
+    if (get_piece_at(one_step_square) == Piece::NONE) {
         if (get_square_rank(one_step_square) == promotion_rank) {
             moves.push_back(
                 Move::promotion(
@@ -576,7 +569,7 @@ void Position::generate_pawn_moves(MoveList& moves, Square start_square) const {
                 get_square_file(start_square),
                 two_steps_rank
             );
-            if (!get_piece_at(two_steps_square)) {
+            if (get_piece_at(two_steps_square) == Piece::NONE) {
                 moves.push_back(
                     Move::double_pawn_push(start_square, two_steps_square)
                 );
@@ -588,20 +581,20 @@ void Position::generate_pawn_moves(MoveList& moves, Square start_square) const {
     for (int capture_direction : {-1, 1}) {
         auto target_file =
             shift(get_square_file(start_square), capture_direction);
-        if (!target_file)
+        if (target_file == File::FILE_INVALID)
             continue;
 
-        auto target_square = square_from_file_rank(*target_file, target_rank_);
+        auto target_square = square_from_file_rank(target_file, target_rank_);
 
         if (auto captured_piece = get_piece_at(target_square);
-            captured_piece &&
-            get_piece_color(*captured_piece) != side_to_move_) {
+            captured_piece != Piece::NONE &&
+            get_piece_color(captured_piece) != side_to_move_) {
             if (get_square_rank(target_square) == promotion_rank) {
                 moves.push_back(
                     Move::promotion_capture(
                         start_square,
                         target_square,
-                        *captured_piece,
+                        captured_piece,
                         get_piece(side_to_move_, PieceType::QUEEN)
                     )
                 );
@@ -609,7 +602,7 @@ void Position::generate_pawn_moves(MoveList& moves, Square start_square) const {
                     Move::promotion_capture(
                         start_square,
                         target_square,
-                        *captured_piece,
+                        captured_piece,
                         get_piece(side_to_move_, PieceType::ROOK)
                     )
                 );
@@ -617,7 +610,7 @@ void Position::generate_pawn_moves(MoveList& moves, Square start_square) const {
                     Move::promotion_capture(
                         start_square,
                         target_square,
-                        *captured_piece,
+                        captured_piece,
                         get_piece(side_to_move_, PieceType::BISHOP)
                     )
                 );
@@ -625,13 +618,13 @@ void Position::generate_pawn_moves(MoveList& moves, Square start_square) const {
                     Move::promotion_capture(
                         start_square,
                         target_square,
-                        *captured_piece,
+                        captured_piece,
                         get_piece(side_to_move_, PieceType::KNIGHT)
                     )
                 );
             } else {
                 moves.push_back(
-                    Move::capture(start_square, target_square, *captured_piece)
+                    Move::capture(start_square, target_square, captured_piece)
                 );
             }
         } else if (target_square == en_passant_square_) {
@@ -660,15 +653,16 @@ void Position::generate_knight_moves(
         const auto target_rank =
             shift(get_square_rank(start_square), move.second);
 
-        if (target_file && target_rank) {
+        if (target_file != File::FILE_INVALID &&
+            target_rank != Rank::RANK_INVALID) {
             const auto target_square =
-                square_from_file_rank(*target_file, *target_rank);
-            if (const auto& target_piece = get_piece_at(target_square);
-                !target_piece) {
+                square_from_file_rank(target_file, target_rank);
+            if (const auto target_piece = get_piece_at(target_square);
+                target_piece == Piece::NONE) {
                 moves.push_back(Move::quiet(start_square, target_square));
-            } else if (get_piece_color(*target_piece) != side_to_move_) {
+            } else if (get_piece_color(target_piece) != side_to_move_) {
                 moves.push_back(
-                    Move::capture(start_square, target_square, *target_piece)
+                    Move::capture(start_square, target_square, target_piece)
                 );
             }
         }
@@ -688,19 +682,20 @@ void Position::generate_bishop_moves(
             const auto target_rank =
                 shift(get_square_rank(start_square), dir.second * i);
 
-            if (target_file && target_rank) {
+            if (target_file != File::FILE_INVALID &&
+                target_rank != Rank::RANK_INVALID) {
                 const auto target_square =
-                    square_from_file_rank(*target_file, *target_rank);
-                if (const auto& target_piece = get_piece_at(target_square);
-                    !target_piece) {
+                    square_from_file_rank(target_file, target_rank);
+                if (const auto target_piece = get_piece_at(target_square);
+                    target_piece == Piece::NONE) {
                     moves.push_back(Move::quiet(start_square, target_square));
                 } else {
-                    if (get_piece_color(*target_piece) != side_to_move_) {
+                    if (get_piece_color(target_piece) != side_to_move_) {
                         moves.push_back(
                             Move::capture(
                                 start_square,
                                 target_square,
-                                *target_piece
+                                target_piece
                             )
                         );
                     }
@@ -722,19 +717,20 @@ void Position::generate_rook_moves(MoveList& moves, Square start_square) const {
             const auto target_rank =
                 shift(get_square_rank(start_square), dir.second * i);
 
-            if (target_file && target_rank) {
+            if (target_file != File::FILE_INVALID &&
+                target_rank != Rank::RANK_INVALID) {
                 const auto target_square =
-                    square_from_file_rank(*target_file, *target_rank);
-                if (const auto& target_piece = get_piece_at(target_square);
-                    !target_piece) {
+                    square_from_file_rank(target_file, target_rank);
+                if (const auto target_piece = get_piece_at(target_square);
+                    target_piece == Piece::NONE) {
                     moves.push_back(Move::quiet(start_square, target_square));
                 } else {
-                    if (get_piece_color(*target_piece) != side_to_move_) {
+                    if (get_piece_color(target_piece) != side_to_move_) {
                         moves.push_back(
                             Move::capture(
                                 start_square,
                                 target_square,
-                                *target_piece
+                                target_piece
                             )
                         );
                     }
@@ -764,15 +760,16 @@ void Position::generate_king_moves(MoveList& moves, Square start_square) const {
         const auto target_rank =
             shift(get_square_rank(start_square), move.second);
 
-        if (target_file && target_rank) {
+        if (target_file != File::FILE_INVALID &&
+            target_rank != Rank::RANK_INVALID) {
             const auto target_square =
-                square_from_file_rank(*target_file, *target_rank);
-            if (const auto& target_piece = get_piece_at(target_square);
-                !target_piece) {
+                square_from_file_rank(target_file, target_rank);
+            if (const auto target_piece = get_piece_at(target_square);
+                target_piece == Piece::NONE) {
                 moves.push_back(Move::quiet(start_square, target_square));
-            } else if (get_piece_color(*target_piece) != side_to_move_) {
+            } else if (get_piece_color(target_piece) != side_to_move_) {
                 moves.push_back(
-                    Move::capture(start_square, target_square, *target_piece)
+                    Move::capture(start_square, target_square, target_piece)
                 );
             }
         }
@@ -785,8 +782,10 @@ void Position::generate_king_moves(MoveList& moves, Square start_square) const {
         get_square_file(start_square) == File::FILE_E) {
         // Kingside
         if (has_kingside_castling_rights(side_to_move_) &&
-            !get_piece_at(square_from_file_rank(File::FILE_F, base_rank)) &&
-            !get_piece_at(square_from_file_rank(File::FILE_G, base_rank)) &&
+            get_piece_at(square_from_file_rank(File::FILE_F, base_rank)) ==
+                Piece::NONE &&
+            get_piece_at(square_from_file_rank(File::FILE_G, base_rank)) ==
+                Piece::NONE &&
             !is_square_attacked(
                 square_from_file_rank(File::FILE_E, base_rank),
                 invert(side_to_move_)
@@ -809,9 +808,12 @@ void Position::generate_king_moves(MoveList& moves, Square start_square) const {
 
         // Queenside
         if (has_queenside_castling_rights(side_to_move_) &&
-            !get_piece_at(square_from_file_rank(File::FILE_D, base_rank)) &&
-            !get_piece_at(square_from_file_rank(File::FILE_C, base_rank)) &&
-            !get_piece_at(square_from_file_rank(File::FILE_B, base_rank)) &&
+            get_piece_at(square_from_file_rank(File::FILE_D, base_rank)) ==
+                Piece::NONE &&
+            get_piece_at(square_from_file_rank(File::FILE_C, base_rank)) ==
+                Piece::NONE &&
+            get_piece_at(square_from_file_rank(File::FILE_B, base_rank)) ==
+                Piece::NONE &&
             !is_square_attacked(
                 square_from_file_rank(File::FILE_E, base_rank),
                 invert(side_to_move_)
@@ -843,11 +845,11 @@ bool Position::is_move_legal(const Move& move) const {
     auto move_piece_internal = [&](Square from, Square to) {
         next_board[static_cast<std::size_t>(to)] =
             next_board[static_cast<std::size_t>(from)];
-        next_board[static_cast<std::size_t>(from)] = std::nullopt;
+        next_board[static_cast<std::size_t>(from)] = Piece::NONE;
     };
 
     auto remove_piece_internal = [&](Square sq) {
-        next_board[static_cast<std::size_t>(sq)] = std::nullopt;
+        next_board[static_cast<std::size_t>(sq)] = Piece::NONE;
     };
 
     auto add_piece_internal = [&](Square sq, Piece p) {
@@ -871,17 +873,11 @@ bool Position::is_move_legal(const Move& move) const {
             break;
         case MoveType::PROMOTION:
             remove_piece_internal(from_sq);
-            add_piece_internal(
-                to_sq,
-                utils::unwrap(move.get_promotion_piece())
-            );
+            add_piece_internal(to_sq, move.get_promotion_piece());
             break;
         case MoveType::PROMOTION_CAPTURE:
             remove_piece_internal(from_sq);
-            add_piece_internal(
-                to_sq,
-                utils::unwrap(move.get_promotion_piece())
-            );
+            add_piece_internal(to_sq, move.get_promotion_piece());
             break;
         case MoveType::CASTLE_KINGSIDE:
             move_piece_internal(from_sq, to_sq);
@@ -922,26 +918,23 @@ bool Position::is_king_in_check(Color king_color) const {
 
 bool Position::is_king_in_check_internal(const Board& board, Color king_color) {
     const auto king_square = find_king_internal(board, king_color);
-    return king_square &&
-           is_square_attacked_internal(board, *king_square, invert(king_color));
+    return king_square != Square::NO_SQ &&
+           is_square_attacked_internal(board, king_square, invert(king_color));
 }
 
-std::optional<Square> Position::find_king(Color king_color) const {
+Square Position::find_king(Color king_color) const {
     return find_king_internal(board_, king_color);
 }
 
-std::optional<Square> Position::find_king_internal(
-    const Board& board,
-    Color king_color
-) {
+Square Position::find_king_internal(const Board& board, Color king_color) {
     for (const auto& sq : SquareRange{}) {
         const auto p = board[static_cast<std::size_t>(sq)];
-        if (p && get_piece_type(*p) == PieceType::KING &&
-            get_piece_color(*p) == king_color) {
+        if (p != Piece::NONE && get_piece_type(p) == PieceType::KING &&
+            get_piece_color(p) == king_color) {
             return sq;
         }
     }
-    return std::nullopt;
+    return Square::NO_SQ;
 }
 
 bool Position::is_square_attacked(Square s, Color attacker_color) const {
@@ -958,11 +951,11 @@ bool Position::is_square_attacked_internal(
     for (int capture_dir : {-1, 1}) {
         const auto file = shift(get_square_file(s), capture_dir);
         const auto rank = shift(get_square_rank(s), -dir);
-        if (file && rank) {
-            const auto from_sq = square_from_file_rank(*file, *rank);
+        if (file != File::FILE_INVALID && rank != Rank::RANK_INVALID) {
+            const auto from_sq = square_from_file_rank(file, rank);
             if (const auto p = board[static_cast<std::size_t>(from_sq)];
-                p && get_piece_color(*p) == attacker_color &&
-                get_piece_type(*p) == PieceType::PAWN) {
+                p != Piece::NONE && get_piece_color(p) == attacker_color &&
+                get_piece_type(p) == PieceType::PAWN) {
                 return true;
             }
         }
@@ -982,11 +975,11 @@ bool Position::is_square_attacked_internal(
     for (const auto& m : knight_moves) {
         const auto file = shift(get_square_file(s), m.first);
         const auto rank = shift(get_square_rank(s), m.second);
-        if (file && rank) {
-            const auto from_sq = square_from_file_rank(*file, *rank);
+        if (file != File::FILE_INVALID && rank != Rank::RANK_INVALID) {
+            const auto from_sq = square_from_file_rank(file, rank);
             if (const auto p = board[static_cast<std::size_t>(from_sq)];
-                p && get_piece_color(*p) == attacker_color &&
-                get_piece_type(*p) == PieceType::KNIGHT) {
+                p != Piece::NONE && get_piece_color(p) == attacker_color &&
+                get_piece_type(p) == PieceType::KNIGHT) {
                 return true;
             }
         }
@@ -999,12 +992,13 @@ bool Position::is_square_attacked_internal(
         for (int i = 1; i < 8; ++i) {
             const auto file = shift(get_square_file(s), d.first * i);
             const auto rank = shift(get_square_rank(s), d.second * i);
-            if (file && rank) {
-                const auto from_sq = square_from_file_rank(*file, *rank);
-                if (const auto p = board[static_cast<std::size_t>(from_sq)]) {
-                    if (get_piece_color(*p) == attacker_color &&
-                        (get_piece_type(*p) == PieceType::BISHOP ||
-                         get_piece_type(*p) == PieceType::QUEEN)) {
+            if (file != File::FILE_INVALID && rank != Rank::RANK_INVALID) {
+                const auto from_sq = square_from_file_rank(file, rank);
+                if (const auto p = board[static_cast<std::size_t>(from_sq)];
+                    p != Piece::NONE) {
+                    if (get_piece_color(p) == attacker_color &&
+                        (get_piece_type(p) == PieceType::BISHOP ||
+                         get_piece_type(p) == PieceType::QUEEN)) {
                         return true;
                     }
                     break;
@@ -1020,12 +1014,13 @@ bool Position::is_square_attacked_internal(
         for (int i = 1; i < 8; ++i) {
             const auto file = shift(get_square_file(s), d.first * i);
             const auto rank = shift(get_square_rank(s), d.second * i);
-            if (file && rank) {
-                const auto from_sq = square_from_file_rank(*file, *rank);
-                if (const auto p = board[static_cast<std::size_t>(from_sq)]) {
-                    if (get_piece_color(*p) == attacker_color &&
-                        (get_piece_type(*p) == PieceType::ROOK ||
-                         get_piece_type(*p) == PieceType::QUEEN)) {
+            if (file != File::FILE_INVALID && rank != Rank::RANK_INVALID) {
+                const auto from_sq = square_from_file_rank(file, rank);
+                if (const auto p = board[static_cast<std::size_t>(from_sq)];
+                    p != Piece::NONE) {
+                    if (get_piece_color(p) == attacker_color &&
+                        (get_piece_type(p) == PieceType::ROOK ||
+                         get_piece_type(p) == PieceType::QUEEN)) {
                         return true;
                     }
                     break;
@@ -1042,11 +1037,11 @@ bool Position::is_square_attacked_internal(
     for (const auto& m : king_moves) {
         const auto file = shift(get_square_file(s), m.first);
         const auto rank = shift(get_square_rank(s), m.second);
-        if (file && rank) {
-            const auto from_sq = square_from_file_rank(*file, *rank);
+        if (file != File::FILE_INVALID && rank != Rank::RANK_INVALID) {
+            const auto from_sq = square_from_file_rank(file, rank);
             if (const auto p = board[static_cast<std::size_t>(from_sq)];
-                p && get_piece_color(*p) == attacker_color &&
-                get_piece_type(*p) == PieceType::KING) {
+                p != Piece::NONE && get_piece_color(p) == attacker_color &&
+                get_piece_type(p) == PieceType::KING) {
                 return true;
             }
         }
@@ -1058,11 +1053,10 @@ bool Position::is_square_attacked_internal(
 MoveList Position::generate_pseudo_legal_moves() const {
     MoveList moves;
     for (const auto& square : SquareRange{}) {
-        auto piece_opt = get_piece_at(square);
-        if (!piece_opt.has_value()) {
+        auto piece = get_piece_at(square);
+        if (piece == Piece::NONE) {
             continue;
         }
-        auto piece = piece_opt.value();
         auto piece_color = get_piece_color(piece);
         if (piece_color != side_to_move_) {
             continue;
@@ -1087,6 +1081,8 @@ MoveList Position::generate_pseudo_legal_moves() const {
             case PieceType::KING:
                 generate_king_moves(moves, square);
                 break;
+            default:
+                break;
         }
     }
     return moves;
@@ -1100,12 +1096,12 @@ std::string Position::get_fen() const noexcept {
         int empty_squares = 0;
         for (auto file : FileRange{}) {
             const auto piece = get_piece_at(square_from_file_rank(file, rank));
-            if (piece) {
+            if (piece != Piece::NONE) {
                 if (empty_squares > 0) {
                     fen += std::to_string(empty_squares);
                     empty_squares = 0;
                 }
-                fen += get_piece_char(*piece);
+                fen += get_piece_char(piece);
             } else {
                 empty_squares++;
             }
@@ -1123,15 +1119,19 @@ std::string Position::get_fen() const noexcept {
 
     // 3. Castling availability
     std::string castling_str;
-    if (has_kingside_castling_rights(Color::WHITE)) castling_str += 'K';
-    if (has_queenside_castling_rights(Color::WHITE)) castling_str += 'Q';
-    if (has_kingside_castling_rights(Color::BLACK)) castling_str += 'k';
-    if (has_queenside_castling_rights(Color::BLACK)) castling_str += 'q';
+    if (has_kingside_castling_rights(Color::WHITE))
+        castling_str += 'K';
+    if (has_queenside_castling_rights(Color::WHITE))
+        castling_str += 'Q';
+    if (has_kingside_castling_rights(Color::BLACK))
+        castling_str += 'k';
+    if (has_queenside_castling_rights(Color::BLACK))
+        castling_str += 'q';
     fen += " " + (castling_str.empty() ? "-" : castling_str);
 
     // 4. En passant target square
-    if (en_passant_square_) {
-        fen += " " + to_string(*en_passant_square_);
+    if (en_passant_square_ != Square::NO_SQ) {
+        fen += " " + to_string(en_passant_square_);
     } else {
         fen += " -";
     }

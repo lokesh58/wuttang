@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <map>
-#include <optional>
 #include <stdexcept>
 
 #include "chess/color.hpp"
@@ -20,7 +19,7 @@ protected:
         bool white_queenside_castling;
         bool black_kingside_castling;
         bool black_queenside_castling;
-        std::optional<Square> en_passant_square;
+        Square en_passant_square;
         std::uint8_t halfmove_clock;
     };
 
@@ -34,7 +33,7 @@ protected:
             if (piece_it != expected.pieces.end()) {
                 EXPECT_EQ(actual_piece, piece_it->second);
             } else {
-                EXPECT_EQ(actual_piece, std::nullopt);
+                EXPECT_EQ(actual_piece, Piece::NONE);
             }
         }
 
@@ -105,7 +104,7 @@ TEST_F(FenParsingTest, HandlesStandardPositionFEN) {
     expected.white_queenside_castling = true;
     expected.black_kingside_castling = true;
     expected.black_queenside_castling = true;
-    expected.en_passant_square = std::nullopt;
+    expected.en_passant_square = Square::NO_SQ;
     expected.halfmove_clock = 0;
 
     verify_position(pos, expected);
@@ -172,7 +171,7 @@ TEST_F(FenParsingTest, HandlesCustomEndGamePositionFEN) {
     expected.white_queenside_castling = false;
     expected.black_kingside_castling = false;
     expected.black_queenside_castling = false;
-    expected.en_passant_square = std::nullopt;
+    expected.en_passant_square = Square::NO_SQ;
     expected.halfmove_clock = 56;
 
     verify_position(pos, expected);

@@ -16,10 +16,10 @@ TEST_F(MakeUndoTest, QuietMove_Knight) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::G1), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::G1), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::F3), Piece::WHITE_KNIGHT);
     EXPECT_EQ(pos.get_side_to_move(), Color::BLACK);
-    EXPECT_EQ(pos.get_en_passant_square(), std::nullopt);
+    EXPECT_EQ(pos.get_en_passant_square(), Square::NO_SQ);
     // Castling rights shouldn't change for White yet (unless rook/king moves, here Knight moves)
     EXPECT_TRUE(pos.has_kingside_castling_rights(Color::WHITE));
 
@@ -29,7 +29,7 @@ TEST_F(MakeUndoTest, QuietMove_Knight) {
     // Verify Restored State
     EXPECT_EQ(pos.get_fen(), initial_fen);
     EXPECT_EQ(pos.get_piece_at(Square::G1), Piece::WHITE_KNIGHT);
-    EXPECT_EQ(pos.get_piece_at(Square::F3), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::F3), Piece::NONE);
     EXPECT_EQ(pos.get_side_to_move(), Color::WHITE);
 }
 
@@ -43,7 +43,7 @@ TEST_F(MakeUndoTest, DoublePawnPush) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::E2), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::E2), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::E4), Piece::WHITE_PAWN);
     EXPECT_EQ(pos.get_side_to_move(), Color::BLACK);
     // En Passant target should be E3
@@ -53,7 +53,7 @@ TEST_F(MakeUndoTest, DoublePawnPush) {
 
     // Verify Restored State
     EXPECT_EQ(pos.get_fen(), initial_fen);
-    EXPECT_EQ(pos.get_en_passant_square(), std::nullopt);
+    EXPECT_EQ(pos.get_en_passant_square(), Square::NO_SQ);
 }
 
 TEST_F(MakeUndoTest, CaptureMove) {
@@ -74,7 +74,7 @@ TEST_F(MakeUndoTest, CaptureMove) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::D5), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::D5), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::E4), Piece::BLACK_PAWN);
     EXPECT_EQ(pos.get_side_to_move(), Color::WHITE);
 
@@ -100,9 +100,9 @@ TEST_F(MakeUndoTest, EnPassantCapture) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::E4), std::nullopt); // Attacking pawn moved
+    EXPECT_EQ(pos.get_piece_at(Square::E4), Piece::NONE); // Attacking pawn moved
     EXPECT_EQ(pos.get_piece_at(Square::F3), Piece::BLACK_PAWN); // Landed on target
-    EXPECT_EQ(pos.get_piece_at(Square::F4), std::nullopt); // Captured pawn (was at f4) removed
+    EXPECT_EQ(pos.get_piece_at(Square::F4), Piece::NONE); // Captured pawn (was at f4) removed
     EXPECT_EQ(pos.get_side_to_move(), Color::WHITE);
 
     pos.undo_last_move();
@@ -123,9 +123,9 @@ TEST_F(MakeUndoTest, KingsideCastling) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::E1), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::E1), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::G1), Piece::WHITE_KING);
-    EXPECT_EQ(pos.get_piece_at(Square::H1), std::nullopt); // Rook moved
+    EXPECT_EQ(pos.get_piece_at(Square::H1), Piece::NONE); // Rook moved
     EXPECT_EQ(pos.get_piece_at(Square::F1), Piece::WHITE_ROOK); // Rook new pos
     EXPECT_FALSE(pos.has_kingside_castling_rights(Color::WHITE));
     EXPECT_FALSE(pos.has_queenside_castling_rights(Color::WHITE)); // Castling forfeits all rights for that color
@@ -149,9 +149,9 @@ TEST_F(MakeUndoTest, QueensideCastling) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::E1), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::E1), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::C1), Piece::WHITE_KING);
-    EXPECT_EQ(pos.get_piece_at(Square::A1), std::nullopt); // Rook moved
+    EXPECT_EQ(pos.get_piece_at(Square::A1), Piece::NONE); // Rook moved
     EXPECT_EQ(pos.get_piece_at(Square::D1), Piece::WHITE_ROOK); // Rook new pos
     EXPECT_FALSE(pos.has_kingside_castling_rights(Color::WHITE));
     EXPECT_FALSE(pos.has_queenside_castling_rights(Color::WHITE));
@@ -173,7 +173,7 @@ TEST_F(MakeUndoTest, PromotionToQueen) {
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::E7), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::E7), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::E8), Piece::WHITE_QUEEN);
     EXPECT_EQ(pos.get_side_to_move(), Color::BLACK);
 
@@ -182,5 +182,5 @@ TEST_F(MakeUndoTest, PromotionToQueen) {
     // Verify Restored State
     EXPECT_EQ(pos.get_fen(), initial_fen);
     EXPECT_EQ(pos.get_piece_at(Square::E7), Piece::WHITE_PAWN);
-    EXPECT_EQ(pos.get_piece_at(Square::E8), std::nullopt);
+    EXPECT_EQ(pos.get_piece_at(Square::E8), Piece::NONE);
 }
