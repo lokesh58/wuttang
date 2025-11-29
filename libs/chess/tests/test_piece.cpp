@@ -72,17 +72,28 @@ TEST(PieceCharTest, ReturnsCorrectCharForNone) {
     EXPECT_EQ(chess::get_piece_char(chess::Piece::NONE), '.');
 }
 
-TEST(PieceCharTest, ReturnsQuestionMarkForInvalidIndices) {
-    // Testing some invalid indices (gaps in the enum values)
-    // 1-16 are unused
-    for (std::uint8_t i = 1; i <= 16; ++i) {
-        EXPECT_EQ(chess::get_piece_char(static_cast<chess::Piece>(i)), '?');
-    }
-    // 23-32 are unused
-    for (std::uint8_t i = 23; i <= 32; ++i) {
-        EXPECT_EQ(chess::get_piece_char(static_cast<chess::Piece>(i)), '?');
-    }
-    // > 38 are out of bounds of the array
-    EXPECT_EQ(chess::get_piece_char(static_cast<chess::Piece>(39)), '?');
-    EXPECT_EQ(chess::get_piece_char(static_cast<chess::Piece>(255)), '?');
+TEST(PieceFromCharTest, ReturnsCorrectPieceForWhitePieces) {
+    EXPECT_EQ(chess::piece_from_char('P'), chess::Piece::WHITE_PAWN);
+    EXPECT_EQ(chess::piece_from_char('N'), chess::Piece::WHITE_KNIGHT);
+    EXPECT_EQ(chess::piece_from_char('B'), chess::Piece::WHITE_BISHOP);
+    EXPECT_EQ(chess::piece_from_char('R'), chess::Piece::WHITE_ROOK);
+    EXPECT_EQ(chess::piece_from_char('Q'), chess::Piece::WHITE_QUEEN);
+    EXPECT_EQ(chess::piece_from_char('K'), chess::Piece::WHITE_KING);
+}
+
+TEST(PieceFromCharTest, ReturnsCorrectPieceForBlackPieces) {
+    EXPECT_EQ(chess::piece_from_char('p'), chess::Piece::BLACK_PAWN);
+    EXPECT_EQ(chess::piece_from_char('n'), chess::Piece::BLACK_KNIGHT);
+    EXPECT_EQ(chess::piece_from_char('b'), chess::Piece::BLACK_BISHOP);
+    EXPECT_EQ(chess::piece_from_char('r'), chess::Piece::BLACK_ROOK);
+    EXPECT_EQ(chess::piece_from_char('q'), chess::Piece::BLACK_QUEEN);
+    EXPECT_EQ(chess::piece_from_char('k'), chess::Piece::BLACK_KING);
+}
+
+TEST(PieceFromCharTest, ReturnsNoneForInvalidChars) {
+    EXPECT_EQ(chess::piece_from_char('.'), chess::Piece::NONE);
+    EXPECT_EQ(chess::piece_from_char('a'), chess::Piece::NONE);
+    EXPECT_EQ(chess::piece_from_char('Z'), chess::Piece::NONE);
+    EXPECT_EQ(chess::piece_from_char(' '), chess::Piece::NONE);
+    EXPECT_EQ(chess::piece_from_char('?'), chess::Piece::NONE);
 }

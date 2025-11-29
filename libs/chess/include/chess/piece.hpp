@@ -104,10 +104,38 @@ inline constexpr PieceType get_piece_type(Piece piece) noexcept {
 
 inline constexpr char get_piece_char(Piece piece) noexcept {
     const auto index = static_cast<std::uint8_t>(piece);
-    if (index >= detail::PIECE_CHARS.size()) [[unlikely]] {
-        return '?';
-    }
     return detail::PIECE_CHARS[index];
+}
+
+inline constexpr Piece piece_from_char(char piece_char) noexcept {
+    switch (piece_char) {
+        case 'P':
+            return Piece::WHITE_PAWN;
+        case 'N':
+            return Piece::WHITE_KNIGHT;
+        case 'B':
+            return Piece::WHITE_BISHOP;
+        case 'R':
+            return Piece::WHITE_ROOK;
+        case 'Q':
+            return Piece::WHITE_QUEEN;
+        case 'K':
+            return Piece::WHITE_KING;
+        case 'p':
+            return Piece::BLACK_PAWN;
+        case 'n':
+            return Piece::BLACK_KNIGHT;
+        case 'b':
+            return Piece::BLACK_BISHOP;
+        case 'r':
+            return Piece::BLACK_ROOK;
+        case 'q':
+            return Piece::BLACK_QUEEN;
+        case 'k':
+            return Piece::BLACK_KING;
+        default:
+            return Piece::NONE;
+    }
 }
 
 }  // namespace chess
