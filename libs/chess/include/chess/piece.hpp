@@ -56,7 +56,7 @@ enum class Piece : std::uint8_t {
 
 namespace detail {
 
-    inline constexpr std::array<char, 64> make_piece_chars_array() {
+    inline constexpr auto PIECE_CHARS = [] {
         std::array<char, 64> arr;
         arr.fill('?');
 
@@ -77,9 +77,7 @@ namespace detail {
         arr[static_cast<std::uint8_t>(Piece::BLACK_KING)] = 'k';
 
         return arr;
-    }
-
-    inline constexpr auto PIECE_CHARS = make_piece_chars_array();
+    }();
 
 }  // namespace detail
 

@@ -1,5 +1,54 @@
 #include <gtest/gtest.h>
+
 #include "chess/piece.hpp"
+
+TEST(GetPieceTest, ReturnsCorrectPiece) {
+    EXPECT_EQ(
+        chess::get_piece(chess::Color::WHITE, chess::PieceType::PAWN),
+        chess::Piece::WHITE_PAWN
+    );
+
+    EXPECT_EQ(
+        chess::get_piece(chess::Color::BLACK, chess::PieceType::KING),
+        chess::Piece::BLACK_KING
+    );
+
+    EXPECT_EQ(
+        chess::get_piece(chess::Color::NONE, chess::PieceType::NONE),
+        chess::Piece::NONE
+    );
+}
+
+TEST(GetPieceColorTest, ReturnsCorrectColor) {
+    EXPECT_EQ(
+        chess::get_piece_color(chess::Piece::WHITE_PAWN),
+        chess::Color::WHITE
+    );
+
+    EXPECT_EQ(
+        chess::get_piece_color(chess::Piece::BLACK_KING),
+        chess::Color::BLACK
+    );
+
+    EXPECT_EQ(chess::get_piece_color(chess::Piece::NONE), chess::Color::NONE);
+}
+
+TEST(GetPieceTypeTest, ReturnsCorrectPieceType) {
+    EXPECT_EQ(
+        chess::get_piece_type(chess::Piece::WHITE_PAWN),
+        chess::PieceType::PAWN
+    );
+
+    EXPECT_EQ(
+        chess::get_piece_type(chess::Piece::BLACK_KING),
+        chess::PieceType::KING
+    );
+
+    EXPECT_EQ(
+        chess::get_piece_type(chess::Piece::NONE),
+        chess::PieceType::NONE
+    );
+}
 
 TEST(PieceCharTest, ReturnsCorrectCharForWhitePieces) {
     EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_PAWN), 'P');
