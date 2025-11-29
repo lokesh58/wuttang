@@ -21,7 +21,6 @@ enum class MoveType : std::uint8_t {
 
 class Move {
 public:
-    // constructor
     Move() noexcept :
             Move(
                 Square::NO_SQ,
@@ -31,11 +30,9 @@ public:
                 Piece::NONE
             ) {}
 
-    // new move creation methods
     static Move null() noexcept {
         return Move();
     }
-
     static Move quiet(Square from_square, Square to_square) noexcept {
         return Move(
             from_square,
@@ -45,7 +42,6 @@ public:
             Piece::NONE
         );
     }
-
     static Move capture(
         Square from_square,
         Square to_square,
@@ -59,7 +55,6 @@ public:
             Piece::NONE
         );
     }
-
     static Move double_pawn_push(
         Square from_square,
         Square to_square
@@ -72,7 +67,6 @@ public:
             Piece::NONE
         );
     }
-
     static Move en_passant(Square from_square, Square to_square) noexcept {
         return Move(
             from_square,
@@ -82,7 +76,6 @@ public:
             Piece::NONE
         );
     }
-
     static Move promotion(
         Square from_square,
         Square to_square,
@@ -96,7 +89,6 @@ public:
             promotion_piece
         );
     }
-
     static Move promotion_capture(
         Square from_square,
         Square to_square,
@@ -111,7 +103,6 @@ public:
             promotion_piece
         );
     }
-
     static Move castle_kingside(Square from_square, Square to_square) noexcept {
         return Move(
             from_square,
@@ -121,7 +112,6 @@ public:
             Piece::NONE
         );
     }
-
     static Move castle_queenside(
         Square from_square,
         Square to_square
@@ -135,23 +125,18 @@ public:
         );
     }
 
-    // getters
     Square get_from_square() const noexcept {
         return from_square_;
     }
-
     Square get_to_square() const noexcept {
         return to_square_;
     }
-
     MoveType get_type() const noexcept {
         return type_;
     }
-
     Piece get_captured_piece() const noexcept {
         return captured_piece_;
     }
-
     Piece get_promotion_piece() const noexcept {
         return promotion_piece_;
     }

@@ -8,7 +8,6 @@
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
 #include "chess/move.hpp"
-#include "chess/move_list.hpp"
 #include "chess/piece.hpp"
 #include "chess/square.hpp"
 

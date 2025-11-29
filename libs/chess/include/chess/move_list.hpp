@@ -29,7 +29,6 @@ public:
     std::size_t size() const noexcept {
         return count_;
     }
-
     [[nodiscard]]
     bool empty() const noexcept {
         return count_ == 0;
@@ -40,17 +39,14 @@ public:
     iterator begin() noexcept {
         return moves_.data();
     }
-
     [[nodiscard]]
     iterator end() noexcept {
         return moves_.data() + count_;
     }
-
     [[nodiscard]]
     const_iterator begin() const noexcept {
         return moves_.data();
     }
-
     [[nodiscard]]
     const_iterator end() const noexcept {
         return moves_.data() + count_;
@@ -61,7 +57,6 @@ public:
     Move& operator[](std::size_t index) noexcept {
         return moves_[index];
     }
-
     [[nodiscard]]
     const Move& operator[](std::size_t index) const noexcept {
         return moves_[index];
