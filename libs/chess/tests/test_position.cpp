@@ -9,7 +9,7 @@
 #include "chess/position.hpp"
 #include "chess/square.hpp"
 
-class FenParsingTest : public testing::Test {
+class PositionFenTest : public testing::Test {
 protected:
     struct ExpectedPosition {
         std::map<chess::Square, chess::Piece> pieces;
@@ -27,7 +27,7 @@ protected:
         const chess::Position& pos,
         const ExpectedPosition& expected
     ) {
-        for (const auto square : chess::SquareRange()) {
+        for (const auto square : chess::SquareRange{}) {
             const auto piece_it = expected.pieces.find(square);
             const auto actual_piece = pos.get_piece_at(square);
             if (piece_it != expected.pieces.end()) {
@@ -62,7 +62,7 @@ protected:
     }
 };
 
-TEST_F(FenParsingTest, HandlesStandardPositionFEN) {
+TEST_F(PositionFenTest, StandardFen) {
     const auto pos = chess::Position::standard();
 
     ExpectedPosition expected;
@@ -110,12 +110,14 @@ TEST_F(FenParsingTest, HandlesStandardPositionFEN) {
     expected.fullmove_number = 1;
 
     verify_position(pos, expected);
+
+    EXPECT_EQ(pos.get_fen(), chess::Position::STANDARD_STARTING_FEN);
 }
 
-TEST_F(FenParsingTest, HandlesCustomMiddleGamePositionFEN) {
-    const auto pos = chess::Position::from_fen(
-        "3rk2r/pppqbppp/3pbn2/6B1/2BQPP2/2N5/PPP3PP/3R1RK1 b k f3 0 17"
-    );
+TEST_F(PositionFenTest, CustomMiddleGameFen) {
+    const auto fen =
+        "3rk2r/pppqbppp/3pbn2/6B1/2BQPP2/2N5/PPP3PP/3R1RK1 b k f3 0 17";
+    const auto pos = chess::Position::from_fen(fen);
 
     ExpectedPosition expected;
     expected.pieces = {
@@ -158,11 +160,13 @@ TEST_F(FenParsingTest, HandlesCustomMiddleGamePositionFEN) {
     expected.fullmove_number = 17;
 
     verify_position(pos, expected);
+
+    EXPECT_EQ(pos.get_fen(), fen);
 }
 
-TEST_F(FenParsingTest, HandlesCustomEndGamePositionFEN) {
-    const auto pos =
-        chess::Position::from_fen("1k6/8/2K5/1P6/8/8/8/8 b - - 56 83");
+TEST_F(PositionFenTest, ParseCustomEngGameFen) {
+    const auto fen = "1k6/8/2K5/1P6/8/8/8/8 b - - 56 83";
+    const auto pos = chess::Position::from_fen(fen);
 
     ExpectedPosition expected;
     expected.pieces = {
@@ -180,9 +184,11 @@ TEST_F(FenParsingTest, HandlesCustomEndGamePositionFEN) {
     expected.fullmove_number = 83;
 
     verify_position(pos, expected);
+
+    EXPECT_EQ(pos.get_fen(), fen);
 }
 
-TEST_F(FenParsingTest, ThrowsOnInvalidFEN) {
+TEST_F(PositionFenTest, ThrowsOnInvalidFEN) {
     EXPECT_THROW(
         chess::Position::from_fen("invalid fen"),
         std::invalid_argument
@@ -242,4 +248,3 @@ TEST_F(FenParsingTest, ThrowsOnInvalidFEN) {
         std::invalid_argument
     ) << "Invalid fullmove number (too high).";
 }
-
