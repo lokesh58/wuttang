@@ -22,126 +22,76 @@ public:
     static Position standard() noexcept;
     static Position from_fen(std::string_view fen_string);
 
-        Piece get_piece_at(Square square) const noexcept;
+    std::string get_fen() const noexcept;
 
-        Color get_side_to_move() const noexcept;
+    Piece get_piece_at(Square square) const noexcept {
+        return board_[static_cast<std::size_t>(square)];
+    }
+    Color get_side_to_move() const noexcept {
+        return side_to_move_;
+    }
+    bool has_castling_right(CastlingRights rights_to_check) const noexcept {
+        return (rights_to_check & castling_rights_) == rights_to_check;
+    }
+    bool has_kingside_castling_rights(Color color) const noexcept {
+        auto rights_to_check = color == Color::WHITE
+                                   ? CastlingRights::WHITE_KINGSIDE
+                                   : CastlingRights::BLACK_KINGSIDE;
+        return has_castling_right(rights_to_check);
+    }
+    bool has_queenside_castling_rights(Color color) const noexcept {
+        auto rights_to_check = color == Color::WHITE
+                                   ? CastlingRights::WHITE_QUEENSIDE
+                                   : CastlingRights::BLACK_QUEENSIDE;
+        return has_castling_right(rights_to_check);
+    }
+    Square get_en_passant_square() const noexcept {
+        return en_passant_square_;
+    }
+    std::uint8_t get_halfmove_clock() const noexcept {
+        return halfmove_clock_;
+    }
 
-        bool has_castling_right(CastlingRights castling_right) const noexcept;
+    void make_move(const Move& move);
+    void undo_last_move();
 
-        bool has_kingside_castling_rights(Color color) const noexcept;
+    MoveList generate_legal_moves() const;
 
-        bool has_queenside_castling_rights(Color color) const noexcept;
+private:
+    static constexpr std::size_t BOARD_SIZE = 64;
+    using Board = std::array<Piece, BOARD_SIZE>;
 
-        Square get_en_passant_square() const noexcept;
+    Position() noexcept;
 
-        std::uint8_t get_halfmove_clock() const noexcept;
+    static bool is_valid_fen(std::string_view fen_string) noexcept;
 
-        std::string get_fen() const noexcept;
+    static Position from_valid_fen(std::string_view fen_string) noexcept;
 
-    
+    void set_piece_at(Square square, Piece piece) noexcept {
+        board_[static_cast<std::size_t>(square)] = piece;
+    }
 
-        void make_move(const Move& move);
+    bool is_valid_move(const Move& move) const noexcept;
 
-        void undo_last_move();
+    void add_piece(Square square, Piece piece) noexcept;
 
-    
+    void remove_piece(Square square) noexcept;
 
-        MoveList generate_legal_moves() const;
+    void move_piece(Square from_square, Square to_square) noexcept;
 
-    
-
-    private:
-
-        static constexpr std::size_t BOARD_SIZE = 64;
-
-        using Board = std::array<Piece, BOARD_SIZE>;
-
-    
-
-        Position() noexcept;
-
-    
-
-        static bool is_valid_fen(std::string_view fen_string) noexcept;
-
-        static Position from_valid_fen(std::string_view fen_string) noexcept;
-
-    
-
-        void set_piece_at(Square square, Piece piece) noexcept;
-
-    
-
-        bool is_valid_move(const Move& move) const noexcept;
-
-        void add_piece(Square square, Piece piece) noexcept;
-
-        void remove_piece(Square square) noexcept;
-
-        void move_piece(Square from_square, Square to_square) noexcept;
-
-    
-
-        void generate_pawn_moves(MoveList& moves, Square start_square) const;
-
-        void generate_knight_moves(MoveList& moves, Square start_square) const;
-
-        void generate_bishop_moves(MoveList& moves, Square start_square) const;
-
-        void generate_rook_moves(MoveList& moves, Square start_square) const;
-
-        void generate_queen_moves(MoveList& moves, Square start_square) const;
-
-        void generate_king_moves(MoveList& moves, Square start_square) const;
-
-    
-
-        MoveList generate_pseudo_legal_moves() const;
-
-        bool is_move_legal(const Move& move) const;
-
-        bool is_king_in_check(Color king_color) const;
-
-        Square find_king(Color king_color) const;
-
-        bool is_square_attacked(Square s, Color attacker_color) const;
-
-    
-
-        static bool is_square_attacked_internal(const Board& board, Square s, Color attacker_color);
-
-        static Square find_king_internal(const Board& board, Color king_color);
-
-        static bool is_king_in_check_internal(const Board& board, Color king_color);
-
-    
-
-        struct History {
-
-            Move move;
-
-            Square en_passant_square;
-
-            CastlingRights castling_rights;
-
-            std::uint8_t halfmove_clock;
-
-        };
-
-    
-
-        Board board_;
-
-        Color side_to_move_;
-
-        Square en_passant_square_;
-
-        CastlingRights castling_rights_;
-
-        std::uint8_t halfmove_clock_;
-
-        std::vector<History> history_;
-
+    struct History {
+        Move move;
+        Square en_passant_square;
+        CastlingRights castling_rights;
+        std::uint8_t halfmove_clock;
     };
+
+    Board board_;
+    Color side_to_move_;
+    Square en_passant_square_;
+    CastlingRights castling_rights_;
+    std::uint8_t halfmove_clock_;
+    std::vector<History> history_;
+};
 
 }  // namespace chess

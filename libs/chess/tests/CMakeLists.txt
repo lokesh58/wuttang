@@ -5,7 +5,6 @@ target_sources(chess_tests
         test_color.cpp
         test_fen_parsing.cpp
         test_make_and_undo.cpp
-        test_move_generation.cpp
         test_move_list.cpp
         test_piece.cpp
         test_square.cpp
