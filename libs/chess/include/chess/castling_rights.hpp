@@ -18,11 +18,7 @@ enum class CastlingRights : std::uint8_t {
 
 }  // namespace chess
 
-namespace utils {
-
 template<>
-struct enable_bitmask_operators<chess::CastlingRights> {
+struct utils::enable_bitmask_operators<chess::CastlingRights> {
     static constexpr bool value = true;
 };
-
-}  // namespace utils

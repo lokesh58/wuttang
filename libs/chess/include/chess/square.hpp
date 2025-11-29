@@ -35,40 +35,7 @@ enum class Square : std::uint8_t {
 
 // clang-format on
 
-}  // namespace chess
-
-namespace utils {
-
-template<>
-struct EnumTraits<chess::File> {
-    using ArithmeticType = std::int8_t;
-    static constexpr auto min = chess::File::FILE_A;
-    static constexpr auto max = chess::File::FILE_H;
-    static constexpr auto sentinel = chess::File::FILE_INVALID;
-};
-
-template<>
-struct EnumTraits<chess::Rank> {
-    using ArithmeticType = std::int8_t;
-    static constexpr auto min = chess::Rank::RANK_1;
-    static constexpr auto max = chess::Rank::RANK_8;
-    static constexpr auto sentinel = chess::Rank::RANK_INVALID;
-};
-
-template<>
-struct EnumTraits<chess::Square> {
-    using ArithmeticType = std::int8_t;
-    static constexpr auto min = chess::Square::A1;
-    static constexpr auto max = chess::Square::H8;
-    static constexpr auto sentinel = chess::Square::NO_SQ;
-};
-
-}  // namespace utils
-
-namespace chess {
-
-// Expose shift in chess namespace
-using utils::shift;
+using utils::shift;  // Expose shift in chess namespace
 
 inline constexpr Square get_square_from_file_rank(
     File square_file,
@@ -111,3 +78,27 @@ inline std::string to_string(Square s) noexcept {
 }
 
 }  // namespace chess
+
+template<>
+struct utils::EnumTraits<chess::File> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = chess::File::FILE_A;
+    static constexpr auto max = chess::File::FILE_H;
+    static constexpr auto sentinel = chess::File::FILE_INVALID;
+};
+
+template<>
+struct utils::EnumTraits<chess::Rank> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = chess::Rank::RANK_1;
+    static constexpr auto max = chess::Rank::RANK_8;
+    static constexpr auto sentinel = chess::Rank::RANK_INVALID;
+};
+
+template<>
+struct utils::EnumTraits<chess::Square> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = chess::Square::A1;
+    static constexpr auto max = chess::Square::H8;
+    static constexpr auto sentinel = chess::Square::NO_SQ;
+};
