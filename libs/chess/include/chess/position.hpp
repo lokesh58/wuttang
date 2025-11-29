@@ -55,8 +55,6 @@ public:
     void make_move(const Move& move);
     void undo_last_move();
 
-    MoveList generate_legal_moves() const;
-
 private:
     static constexpr std::size_t BOARD_SIZE = 64;
     using Board = std::array<Piece, BOARD_SIZE>;
@@ -64,7 +62,6 @@ private:
     Position() noexcept;
 
     static bool is_valid_fen(std::string_view fen_string) noexcept;
-
     static Position from_valid_fen(std::string_view fen_string) noexcept;
 
     void set_piece_at(Square square, Piece piece) noexcept {
@@ -72,11 +69,8 @@ private:
     }
 
     bool is_valid_move(const Move& move) const noexcept;
-
     void add_piece(Square square, Piece piece) noexcept;
-
     void remove_piece(Square square) noexcept;
-
     void move_piece(Square from_square, Square to_square) noexcept;
 
     struct History {
