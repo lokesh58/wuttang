@@ -156,6 +156,8 @@ public:
         return promotion_piece_;
     }
 
+    bool operator==(const Move&) const noexcept = default;
+
 private:
     Move(
         Square from_square,
