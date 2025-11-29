@@ -5,6 +5,7 @@ add_executable(chess_tests
     test_make_and_undo.cpp
     test_iterators.cpp
     test_piece.cpp
+    test_color.cpp
 )
 target_link_libraries(chess_tests
     PRIVATE
