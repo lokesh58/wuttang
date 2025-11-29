@@ -5,20 +5,20 @@
 #include "chess/piece.hpp"
 #include "chess/square.hpp"
 
-TEST(MoveListTest, InitialState) {
+TEST(MoveList, InitialState) {
     chess::MoveList move_list;
     EXPECT_EQ(move_list.size(), 0);
     EXPECT_TRUE(move_list.empty());
 }
 
-TEST(MoveListTest, PushBackAndSize) {
+TEST(MoveList, PushBackAndSize) {
     chess::MoveList move_list;
     move_list.push_back(chess::Move{});
     EXPECT_EQ(move_list.size(), 1);
     EXPECT_FALSE(move_list.empty());
 }
 
-TEST(MoveListTest, Clear) {
+TEST(MoveList, Clear) {
     chess::MoveList move_list;
     move_list.push_back(chess::Move{});
     move_list.clear();
@@ -26,7 +26,7 @@ TEST(MoveListTest, Clear) {
     EXPECT_TRUE(move_list.empty());
 }
 
-TEST(MoveListTest, Iterators) {
+TEST(MoveList, Iterators) {
     chess::MoveList move_list;
     move_list.push_back(chess::Move{});
     move_list.push_back(chess::Move{});
@@ -39,7 +39,7 @@ TEST(MoveListTest, Iterators) {
     EXPECT_EQ(count, 2);
 }
 
-TEST(MoveListTest, RandomAccess) {
+TEST(MoveList, RandomAccess) {
     chess::MoveList move_list;
     auto move1 = chess::Move::promotion(
         chess::Square::A7,

@@ -81,7 +81,7 @@ namespace detail {
 
 }  // namespace detail
 
-inline constexpr Piece get_piece(
+inline constexpr Piece get_piece_from_color_type(
     Color piece_color,
     PieceType piece_type
 ) noexcept {
@@ -107,7 +107,7 @@ inline constexpr char get_piece_char(Piece piece) noexcept {
     return detail::PIECE_CHARS[index];
 }
 
-inline constexpr Piece piece_from_char(char piece_char) noexcept {
+inline constexpr Piece get_piece_from_char(char piece_char) noexcept {
     switch (piece_char) {
         case 'P':
             return Piece::WHITE_PAWN;

@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
+
 #include "utils/enum_shift.hpp"
 
-enum class MyShiftableEnum {
-    A, B, C, D, E, INVALID
-};
+enum class MyShiftableEnum { A, B, C, D, E, INVALID };
 
 template<>
 struct utils::EnumTraits<MyShiftableEnum> {
@@ -13,26 +12,26 @@ struct utils::EnumTraits<MyShiftableEnum> {
     static constexpr MyShiftableEnum sentinel = MyShiftableEnum::INVALID;
 };
 
-TEST(EnumShiftTest, PositiveShift) {
+TEST(EnumShift, PositiveShift) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::A, 2), MyShiftableEnum::C);
     EXPECT_EQ(utils::shift(MyShiftableEnum::C, 2), MyShiftableEnum::E);
 }
 
-TEST(EnumShiftTest, NegativeShift) {
+TEST(EnumShift, NegativeShift) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::E, -2), MyShiftableEnum::C);
     EXPECT_EQ(utils::shift(MyShiftableEnum::C, -2), MyShiftableEnum::A);
 }
 
-TEST(EnumShiftTest, ShiftToBoundaries) {
+TEST(EnumShift, ShiftToBoundaries) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::A, 4), MyShiftableEnum::E);
     EXPECT_EQ(utils::shift(MyShiftableEnum::E, -4), MyShiftableEnum::A);
 }
 
-TEST(EnumShiftTest, ShiftBeyondBoundaries) {
+TEST(EnumShift, ShiftBeyondBoundaries) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::D, 2), MyShiftableEnum::INVALID);
     EXPECT_EQ(utils::shift(MyShiftableEnum::B, -3), MyShiftableEnum::INVALID);
 }
 
-TEST(EnumShiftTest, ZeroShift) {
+TEST(EnumShift, ZeroShift) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::B, 0), MyShiftableEnum::B);
 }

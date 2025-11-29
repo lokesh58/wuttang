@@ -70,7 +70,7 @@ namespace chess {
 // Expose shift in chess namespace
 using utils::shift;
 
-inline constexpr Square square_from_file_rank(
+inline constexpr Square get_square_from_file_rank(
     File square_file,
     Rank square_rank
 ) noexcept {

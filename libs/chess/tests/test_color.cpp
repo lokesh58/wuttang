@@ -2,7 +2,7 @@
 
 #include "chess/color.hpp"
 
-TEST(ColorTest, Invert) {
+TEST(Color, Invert) {
     EXPECT_EQ(chess::invert(chess::Color::WHITE), chess::Color::BLACK);
     EXPECT_EQ(chess::invert(chess::Color::BLACK), chess::Color::WHITE);
     EXPECT_EQ(chess::invert(chess::Color::BOTH), chess::Color::NONE);

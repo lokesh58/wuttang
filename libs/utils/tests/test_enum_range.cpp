@@ -7,7 +7,7 @@
 
 enum class TestEnum { A, B, C, D, E };
 
-TEST(EnumRangeTest, ForwardIteration) {
+TEST(EnumRange, ForwardIteration) {
     std::vector<TestEnum> expected = {TestEnum::B, TestEnum::C, TestEnum::D};
     std::vector<TestEnum> actual;
     for (auto e : utils::EnumRange<TestEnum, TestEnum::B, TestEnum::D>()) {
@@ -16,7 +16,7 @@ TEST(EnumRangeTest, ForwardIteration) {
     EXPECT_EQ(actual, expected);
 }
 
-TEST(EnumRangeTest, ReverseIteration) {
+TEST(EnumRange, ReverseIteration) {
     std::vector<TestEnum> expected = {TestEnum::D, TestEnum::C, TestEnum::B};
     std::vector<TestEnum> actual;
     auto range = utils::EnumRange<TestEnum, TestEnum::B, TestEnum::D>();
@@ -26,7 +26,7 @@ TEST(EnumRangeTest, ReverseIteration) {
     EXPECT_EQ(actual, expected);
 }
 
-TEST(EnumRangeTest, SingleElementRange) {
+TEST(EnumRange, SingleElementRange) {
     std::vector<TestEnum> expected = {TestEnum::C};
     std::vector<TestEnum> actual;
     for (auto e : utils::EnumRange<TestEnum, TestEnum::C, TestEnum::C>()) {
@@ -35,7 +35,7 @@ TEST(EnumRangeTest, SingleElementRange) {
     EXPECT_EQ(actual, expected);
 }
 
-TEST(EnumRangeTest, EmptyRange) {
+TEST(EnumRange, EmptyRange) {
     std::vector<TestEnum> actual;
     for (auto e : utils::EnumRange<TestEnum, TestEnum::D, TestEnum::B>()) {
         actual.push_back(e);

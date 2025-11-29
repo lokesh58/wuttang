@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cctype>
 #include <charconv>
-#include <cstddef>
 #include <ranges>
 #include <stdexcept>
 #include <string>
@@ -13,7 +12,6 @@
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
 #include "chess/move.hpp"
-#include "chess/move_list.hpp"
 #include "chess/piece.hpp"
 #include "chess/square.hpp"
 
@@ -24,7 +22,8 @@ Position::Position() noexcept :
         side_to_move_(Color::NONE),
         en_passant_square_(Square::NO_SQ),
         castling_rights_(CastlingRights::NONE),
-        halfmove_clock_(0) {
+        halfmove_clock_(0),
+        initial_fullmove_number_(1) {
     board_.fill(Piece::NONE);
 };
 
@@ -45,7 +44,7 @@ bool Position::is_valid_fen(std::string_view fen_string) noexcept {
     auto end = fen_string.end();
 
     // Helper lambda to extract and validate a part until a delimiter
-    auto extract_part = [&](char delimiter) -> std::string_view {
+    auto extract_part = [&](char delimiter) {
         auto start = it;
         while (it != end && *it != delimiter) {
             ++it;
@@ -111,9 +110,22 @@ bool Position::is_valid_fen(std::string_view fen_string) noexcept {
     if (halfmove_clock_result.ec != std::errc() ||
         halfmove_clock_result.ptr !=
             halfmove_clock_sv.data() + halfmove_clock_sv.size() ||
-        halfmove_clock < 0 || halfmove_clock > 100)
+        halfmove_clock < 0 || halfmove_clock > 150)
         return false;
 
+    // 6. Validate fullmove number
+    std::string_view fullmove_number_sv = extract_part(' ');
+    int fullmove_number;
+    auto fullmove_number_result = std::from_chars(
+        fullmove_number_sv.data(),
+        fullmove_number_sv.data() + fullmove_number_sv.size(),
+        fullmove_number
+    );
+    if (fullmove_number_result.ec != std::errc() ||
+        fullmove_number_result.ptr !=
+            fullmove_number_sv.data() + fullmove_number_sv.size() ||
+        fullmove_number < 1 || fullmove_number > 9999)
+        return false;
     return true;
 }
 
@@ -123,7 +135,7 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
     auto end = fen_string.end();
 
     // Helper lambda to extract and validate a part until a delimiter
-    auto extract_part = [&](char delimiter) -> std::string_view {
+    auto extract_part = [&](char delimiter) {
         auto start = it;
         while (it != end && *it != delimiter) {
             ++it;
@@ -135,28 +147,6 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         return part;
     };
 
-    // Helper lambda to get piece from char
-    auto get_piece_type_from_fen_char = [](char piece_char) -> PieceType {
-        switch (std::toupper(piece_char)) {
-            case 'P':
-                return PieceType::PAWN;
-            case 'R':
-                return PieceType::ROOK;
-            case 'N':
-                return PieceType::KNIGHT;
-            case 'B':
-                return PieceType::BISHOP;
-            case 'Q':
-                return PieceType::QUEEN;
-            case 'K':
-                return PieceType::KING;
-            default:
-                assert(false);
-                // return a pawn by default to satisfy compiler
-                return PieceType::PAWN;
-        }
-    };
-
     // 1. Piece placement
     std::string_view piece_placement = extract_part(' ');
     Rank placement_rank = Rank::RANK_8;
@@ -166,18 +156,14 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
             placement_rank = shift(placement_rank, -1);
             placement_file = File::FILE_A;
         } else if (std::isdigit(c)) {
-            std::size_t empty_squares = c - '0';
-            placement_file =
-                shift(placement_file, static_cast<int>(empty_squares));
-        } else if (std::isalpha(c)) {
-            Color piece_color = std::isupper(c) ? Color::WHITE : Color::BLACK;
-            PieceType piece_type = get_piece_type_from_fen_char(c);
-            if (placement_file != File::FILE_INVALID &&
-                placement_rank != Rank::RANK_INVALID) {
-                position.board_[static_cast<std::size_t>(
-                    square_from_file_rank(placement_file, placement_rank)
-                )] = get_piece(piece_color, piece_type);
-            }
+            std::int8_t empty_squares = c - '0';
+            placement_file = shift(placement_file, empty_squares);
+        } else {
+            auto piece = get_piece_from_char(c);
+            position.set_piece_at(
+                get_square_from_file_rank(placement_file, placement_rank),
+                piece
+            );
             placement_file = shift(placement_file, 1);
         }
     }
@@ -192,16 +178,16 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
     for (char c : castling_availability) {
         switch (c) {
             case 'K':
-                position.castling_rights_ |= CastlingRights::WHITE_KINGSIDE;
+                position.add_castling_rights(CastlingRights::WHITE_KINGSIDE);
                 break;
             case 'Q':
-                position.castling_rights_ |= CastlingRights::WHITE_QUEENSIDE;
+                position.add_castling_rights(CastlingRights::WHITE_QUEENSIDE);
                 break;
             case 'k':
-                position.castling_rights_ |= CastlingRights::BLACK_KINGSIDE;
+                position.add_castling_rights(CastlingRights::BLACK_KINGSIDE);
                 break;
             case 'q':
-                position.castling_rights_ |= CastlingRights::BLACK_QUEENSIDE;
+                position.add_castling_rights(CastlingRights::BLACK_QUEENSIDE);
                 break;
         }
     }
@@ -211,7 +197,7 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
     if (en_passant != "-") {
         const auto file = static_cast<File>(en_passant[0] - 'a');
         const auto rank = static_cast<Rank>(en_passant[1] - '1');
-        position.en_passant_square_ = square_from_file_rank(file, rank);
+        position.en_passant_square_ = get_square_from_file_rank(file, rank);
     } else {
         position.en_passant_square_ = Square::NO_SQ;
     }
@@ -224,17 +210,27 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         position.halfmove_clock_
     );
 
+    // 6. Fullmove number
+    std::string_view fullmove_number = extract_part(' ');
+    std::from_chars(
+        fullmove_number.data(),
+        fullmove_number.data() + fullmove_number.size(),
+        position.initial_fullmove_number_
+    );
+
     return position;
 }
 
 std::string Position::get_fen() const noexcept {
     std::string fen;
+    fen.reserve(90);
 
     // 1. Piece placement
     for (auto rank : std::views::reverse(RankRange{})) {
         int empty_squares = 0;
         for (auto file : FileRange{}) {
-            const auto piece = get_piece_at(square_from_file_rank(file, rank));
+            const auto piece =
+                get_piece_at(get_square_from_file_rank(file, rank));
             if (piece != Piece::NONE) {
                 if (empty_squares > 0) {
                     fen += std::to_string(empty_squares);
@@ -279,7 +275,7 @@ std::string Position::get_fen() const noexcept {
     fen += " " + std::to_string(halfmove_clock_);
 
     // 6. Fullmove number
-    fen += " " + std::to_string(history_.size() / 2 + 1);
+    fen += " " + std::to_string(get_fullmove_number());
 
     return fen;
 }
@@ -312,7 +308,7 @@ void Position::make_move(const Move& move) {
             break;
         case MoveType::DOUBLE_PAWN_PUSH:
             move_piece(move.get_from_square(), move.get_to_square());
-            en_passant_square_ = square_from_file_rank(
+            en_passant_square_ = get_square_from_file_rank(
                 get_square_file(move.get_to_square()),
                 side_to_move_ == Color::WHITE ? Rank::RANK_3 : Rank::RANK_6
             );
@@ -320,7 +316,7 @@ void Position::make_move(const Move& move) {
             break;
         case MoveType::EN_PASSANT:
             move_piece(move.get_from_square(), move.get_to_square());
-            remove_piece(square_from_file_rank(
+            remove_piece(get_square_from_file_rank(
                 get_square_file(move.get_to_square()),
                 side_to_move_ == Color::WHITE ? Rank::RANK_5 : Rank::RANK_4
             ));
@@ -343,11 +339,11 @@ void Position::make_move(const Move& move) {
         case MoveType::CASTLE_KINGSIDE:
             move_piece(move.get_from_square(), move.get_to_square());
             move_piece(
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_H,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 ),
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_F,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 )
@@ -358,11 +354,11 @@ void Position::make_move(const Move& move) {
         case MoveType::CASTLE_QUEENSIDE:
             move_piece(move.get_from_square(), move.get_to_square());
             move_piece(
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_A,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 ),
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_D,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 )
@@ -436,11 +432,14 @@ void Position::undo_last_move() {
             break;
         case MoveType::EN_PASSANT:
             add_piece(
-                square_from_file_rank(
+                get_square_from_file_rank(
                     get_square_file(move.get_to_square()),
                     side_to_move_ == Color::WHITE ? Rank::RANK_5 : Rank::RANK_4
                 ),
-                get_piece(invert(side_to_move_), PieceType::PAWN)
+                get_piece_from_color_type(
+                    invert(side_to_move_),
+                    PieceType::PAWN
+                )
             );
             move_piece(move.get_to_square(), move.get_from_square());
             break;
@@ -448,7 +447,7 @@ void Position::undo_last_move() {
             remove_piece(move.get_to_square());
             add_piece(
                 move.get_from_square(),
-                get_piece(side_to_move_, PieceType::PAWN)
+                get_piece_from_color_type(side_to_move_, PieceType::PAWN)
             );
             break;
         case MoveType::PROMOTION_CAPTURE:
@@ -456,16 +455,16 @@ void Position::undo_last_move() {
             add_piece(move.get_to_square(), move.get_captured_piece());
             add_piece(
                 move.get_from_square(),
-                get_piece(side_to_move_, PieceType::PAWN)
+                get_piece_from_color_type(side_to_move_, PieceType::PAWN)
             );
             break;
         case MoveType::CASTLE_KINGSIDE:
             move_piece(
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_F,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 ),
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_H,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 )
@@ -474,11 +473,11 @@ void Position::undo_last_move() {
             break;
         case MoveType::CASTLE_QUEENSIDE:
             move_piece(
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_D,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 ),
-                square_from_file_rank(
+                get_square_from_file_rank(
                     File::FILE_A,
                     side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
                 )
