@@ -492,6 +492,8 @@ void Position::undo_last_move() {
 }
 
 bool Position::is_valid_move(const Move& move) const noexcept {
+    if (move.get_type() == MoveType::NULL_MOVE)
+        return true;
     const auto moving_piece = get_piece_at(move.get_from_square());
     if (moving_piece == Piece::NONE)
         return false;
