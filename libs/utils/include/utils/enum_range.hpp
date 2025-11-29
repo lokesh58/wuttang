@@ -54,7 +54,11 @@ public:
 
     EnumRange() :
             begin_(static_cast<Underlying>(beginVal)),
-            end_(static_cast<Underlying>(endVal)) {}
+            end_(static_cast<Underlying>(endVal)) {
+        if (begin_ > end_) {
+            begin_ = end_ + 1;
+        }
+    }
     iterator begin() const {
         return iterator(begin_);
     }
