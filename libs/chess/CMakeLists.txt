@@ -14,20 +14,4 @@ target_link_libraries(chess
         utils
 )
 
-# Add chess_tests executable
-add_executable(chess_tests)
-target_sources(chess_tests
-    PRIVATE
-        tests/test_fen_parsing.cpp
-        tests/test_move_generation.cpp
-        tests/test_make_and_undo.cpp
-        tests/test_iterators.cpp
-        tests/test_piece.cpp
-)
-target_link_libraries(chess_tests
-    PRIVATE
-        chess
-        GTest::gtest_main
-)
-include(GoogleTest)
-gtest_discover_tests(chess_tests)
+add_subdirectory(tests)
