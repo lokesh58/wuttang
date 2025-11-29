@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "chess/position.hpp"
 
 using namespace chess;
@@ -61,7 +62,7 @@ TEST_F(MakeUndoTest, CaptureMove) {
     // FEN: rnbqkbnr/pppppppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
     // (Modified standard slightly)
     // Let's use a simpler custom FEN
-    auto pos = Position::from_fen("8/3p4/8/4P3/8/8/8/8 b - - 0 1"); 
+    auto pos = Position::from_fen("8/3p4/8/4P3/8/8/8/8 b - - 0 1");
     // Black pawn d7, White pawn e5. d7->e5 is not capture.
     // Wait, pawns capture diagonally.
     // Black pawn at d5, White pawn at e4. d5xe4.
@@ -91,30 +92,49 @@ TEST_F(MakeUndoTest, EnPassantCapture) {
     // White just moved f2 -> f4.
     // Black pawn at e4.
     // En Passant target at f3.
-    auto pos = Position::from_fen("rnbqkbnr/pppp1ppp/8/8/4pP2/8/PPPPP1PP/RNBQKBNR b KQkq f3 0 1");
+    auto pos = Position::from_fen(
+        "rnbqkbnr/pppp1ppp/8/8/4pP2/8/PPPPP1PP/RNBQKBNR b KQkq f3 0 1"
+    );
     const auto initial_fen = pos.get_fen();
-    
+
     // Black captures en passant: e4 -> f3
     auto move = Move::en_passant(Square::E4, Square::F3);
 
     pos.make_move(move);
 
     // Verify Post-Move State
-    EXPECT_EQ(pos.get_piece_at(Square::E4), Piece::NONE); // Attacking pawn moved
-    EXPECT_EQ(pos.get_piece_at(Square::F3), Piece::BLACK_PAWN); // Landed on target
-    EXPECT_EQ(pos.get_piece_at(Square::F4), Piece::NONE); // Captured pawn (was at f4) removed
+    EXPECT_EQ(
+        pos.get_piece_at(Square::E4),
+        Piece::NONE
+    );  // Attacking pawn moved
+    EXPECT_EQ(
+        pos.get_piece_at(Square::F3),
+        Piece::BLACK_PAWN
+    );  // Landed on target
+    EXPECT_EQ(
+        pos.get_piece_at(Square::F4),
+        Piece::NONE
+    );  // Captured pawn (was at f4) removed
     EXPECT_EQ(pos.get_side_to_move(), Color::WHITE);
 
     pos.undo_last_move();
 
     // Verify Restored State
     EXPECT_EQ(pos.get_fen(), initial_fen);
-    EXPECT_EQ(pos.get_piece_at(Square::F4), Piece::WHITE_PAWN); // Captured pawn back
-    EXPECT_EQ(pos.get_piece_at(Square::E4), Piece::BLACK_PAWN); // Attacker back
+    EXPECT_EQ(
+        pos.get_piece_at(Square::F4),
+        Piece::WHITE_PAWN
+    );  // Captured pawn back
+    EXPECT_EQ(
+        pos.get_piece_at(Square::E4),
+        Piece::BLACK_PAWN
+    );  // Attacker back
 }
 
 TEST_F(MakeUndoTest, KingsideCastling) {
-    auto pos = Position::from_fen("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"); 
+    auto pos = Position::from_fen(
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+    );
     const auto initial_fen = pos.get_fen();
 
     // White O-O: E1 -> G1
@@ -125,10 +145,12 @@ TEST_F(MakeUndoTest, KingsideCastling) {
     // Verify Post-Move State
     EXPECT_EQ(pos.get_piece_at(Square::E1), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::G1), Piece::WHITE_KING);
-    EXPECT_EQ(pos.get_piece_at(Square::H1), Piece::NONE); // Rook moved
-    EXPECT_EQ(pos.get_piece_at(Square::F1), Piece::WHITE_ROOK); // Rook new pos
+    EXPECT_EQ(pos.get_piece_at(Square::H1), Piece::NONE);        // Rook moved
+    EXPECT_EQ(pos.get_piece_at(Square::F1), Piece::WHITE_ROOK);  // Rook new pos
     EXPECT_FALSE(pos.has_kingside_castling_rights(Color::WHITE));
-    EXPECT_FALSE(pos.has_queenside_castling_rights(Color::WHITE)); // Castling forfeits all rights for that color
+    EXPECT_FALSE(
+        pos.has_queenside_castling_rights(Color::WHITE)
+    );  // Castling forfeits all rights for that color
 
     pos.undo_last_move();
 
@@ -140,7 +162,9 @@ TEST_F(MakeUndoTest, KingsideCastling) {
 }
 
 TEST_F(MakeUndoTest, QueensideCastling) {
-    auto pos = Position::from_fen("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"); 
+    auto pos = Position::from_fen(
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+    );
     const auto initial_fen = pos.get_fen();
 
     // White O-O-O: E1 -> C1
@@ -151,8 +175,8 @@ TEST_F(MakeUndoTest, QueensideCastling) {
     // Verify Post-Move State
     EXPECT_EQ(pos.get_piece_at(Square::E1), Piece::NONE);
     EXPECT_EQ(pos.get_piece_at(Square::C1), Piece::WHITE_KING);
-    EXPECT_EQ(pos.get_piece_at(Square::A1), Piece::NONE); // Rook moved
-    EXPECT_EQ(pos.get_piece_at(Square::D1), Piece::WHITE_ROOK); // Rook new pos
+    EXPECT_EQ(pos.get_piece_at(Square::A1), Piece::NONE);        // Rook moved
+    EXPECT_EQ(pos.get_piece_at(Square::D1), Piece::WHITE_ROOK);  // Rook new pos
     EXPECT_FALSE(pos.has_kingside_castling_rights(Color::WHITE));
     EXPECT_FALSE(pos.has_queenside_castling_rights(Color::WHITE));
 
@@ -164,7 +188,7 @@ TEST_F(MakeUndoTest, QueensideCastling) {
 }
 
 TEST_F(MakeUndoTest, PromotionToQueen) {
-    auto pos = Position::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1"); // pawn on e7
+    auto pos = Position::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");  // pawn on e7
     const auto initial_fen = pos.get_fen();
 
     // e7 -> e8 = Q

@@ -10,7 +10,7 @@
 
 using namespace chess;
 
-class FenParsingTest: public testing::Test {
+class FenParsingTest : public testing::Test {
 protected:
     struct ExpectedPosition {
         std::map<Square, Piece> pieces;
@@ -217,4 +217,3 @@ TEST_F(FenParsingTest, LegalMovesInStandardPosition) {
     const auto moves = pos.generate_legal_moves();
     EXPECT_EQ(moves.size(), 20);
 }
-
