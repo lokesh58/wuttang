@@ -2,7 +2,7 @@
 
 #include "chess/piece.hpp"
 
-TEST(Piece, GetPieceFromColorType) {
+TEST(PieceTest, GetPieceFromColorType) {
     EXPECT_EQ(
         chess::get_piece_from_color_type(
             chess::Color::WHITE,
@@ -28,7 +28,7 @@ TEST(Piece, GetPieceFromColorType) {
     );
 }
 
-TEST(Piece, GetPieceColor) {
+TEST(PieceTest, GetPieceColor) {
     EXPECT_EQ(
         chess::get_piece_color(chess::Piece::WHITE_PAWN),
         chess::Color::WHITE
@@ -42,7 +42,7 @@ TEST(Piece, GetPieceColor) {
     EXPECT_EQ(chess::get_piece_color(chess::Piece::NONE), chess::Color::NONE);
 }
 
-TEST(Piece, GetPieceType) {
+TEST(PieceTest, GetPieceType) {
     EXPECT_EQ(
         chess::get_piece_type(chess::Piece::WHITE_PAWN),
         chess::PieceType::PAWN
@@ -59,7 +59,7 @@ TEST(Piece, GetPieceType) {
     );
 }
 
-TEST(Piece, GetPieceChar) {
+TEST(PieceTest, GetPieceChar) {
     EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_PAWN), 'P');
     EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_KNIGHT), 'N');
     EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_BISHOP), 'B');
@@ -77,7 +77,7 @@ TEST(Piece, GetPieceChar) {
     EXPECT_EQ(chess::get_piece_char(chess::Piece::NONE), '.');
 }
 
-TEST(Piece, GetPieceFromChar) {
+TEST(PieceTest, GetPieceFromChar) {
     EXPECT_EQ(chess::get_piece_from_char('P'), chess::Piece::WHITE_PAWN);
     EXPECT_EQ(chess::get_piece_from_char('N'), chess::Piece::WHITE_KNIGHT);
     EXPECT_EQ(chess::get_piece_from_char('B'), chess::Piece::WHITE_BISHOP);

@@ -14,49 +14,49 @@ struct utils::enable_bitmask_operators<MyEnum> {
     static constexpr bool value = true;
 };
 
-TEST(EnumFlags, BitwiseOr) {
+TEST(EnumFlagsTest, BitwiseOr) {
     MyEnum flags = MyEnum::FLAG1 | MyEnum::FLAG2;
     EXPECT_EQ(static_cast<int>(flags), 3);
 }
 
-TEST(EnumFlags, BitwiseAnd) {
+TEST(EnumFlagsTest, BitwiseAnd) {
     MyEnum flags = MyEnum::FLAG1 | MyEnum::FLAG2;
     EXPECT_EQ(flags & MyEnum::FLAG1, MyEnum::FLAG1);
     EXPECT_EQ(flags & MyEnum::FLAG2, MyEnum::FLAG2);
     EXPECT_EQ(flags & MyEnum::FLAG3, MyEnum::NONE);
 }
 
-TEST(EnumFlags, BitwiseXor) {
+TEST(EnumFlagsTest, BitwiseXor) {
     MyEnum flags = MyEnum::FLAG1 | MyEnum::FLAG2;
     flags = flags ^ MyEnum::FLAG1;
     EXPECT_EQ(flags, MyEnum::FLAG2);
 }
 
-TEST(EnumFlags, BitwiseNot) {
+TEST(EnumFlagsTest, BitwiseNot) {
     MyEnum flags = MyEnum::FLAG1;
     flags = ~flags;
     EXPECT_EQ(static_cast<int>(flags), ~1);
 }
 
-TEST(EnumFlags, BitwiseOrAssignment) {
+TEST(EnumFlagsTest, BitwiseOrAssignment) {
     MyEnum flags = MyEnum::FLAG1;
     flags |= MyEnum::FLAG2;
     EXPECT_EQ(static_cast<int>(flags), 3);
 }
 
-TEST(EnumFlags, BitwiseAndAssignment) {
+TEST(EnumFlagsTest, BitwiseAndAssignment) {
     MyEnum flags = MyEnum::FLAG1 | MyEnum::FLAG2;
     flags &= MyEnum::FLAG1;
     EXPECT_EQ(flags, MyEnum::FLAG1);
 }
 
-TEST(EnumFlags, BitwiseXorAssignment) {
+TEST(EnumFlagsTest, BitwiseXorAssignment) {
     MyEnum flags = MyEnum::FLAG1 | MyEnum::FLAG2;
     flags ^= MyEnum::FLAG1;
     EXPECT_EQ(flags, MyEnum::FLAG2);
 }
 
-TEST(EnumFlags, DisabledEnum) {
+TEST(EnumFlagsTest, DisabledEnum) {
     enum class DisabledEnum { A, B, C };
     // This should not compile if the operators were enabled for all enums
     SUCCEED();

@@ -12,26 +12,26 @@ struct utils::EnumTraits<MyShiftableEnum> {
     static constexpr MyShiftableEnum sentinel = MyShiftableEnum::INVALID;
 };
 
-TEST(EnumShift, PositiveShift) {
+TEST(EnumShiftTest, PositiveShift) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::A, 2), MyShiftableEnum::C);
     EXPECT_EQ(utils::shift(MyShiftableEnum::C, 2), MyShiftableEnum::E);
 }
 
-TEST(EnumShift, NegativeShift) {
+TEST(EnumShiftTest, NegativeShift) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::E, -2), MyShiftableEnum::C);
     EXPECT_EQ(utils::shift(MyShiftableEnum::C, -2), MyShiftableEnum::A);
 }
 
-TEST(EnumShift, ShiftToBoundaries) {
+TEST(EnumShiftTest, ShiftToBoundaries) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::A, 4), MyShiftableEnum::E);
     EXPECT_EQ(utils::shift(MyShiftableEnum::E, -4), MyShiftableEnum::A);
 }
 
-TEST(EnumShift, ShiftBeyondBoundaries) {
+TEST(EnumShiftTest, ShiftBeyondBoundaries) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::D, 2), MyShiftableEnum::INVALID);
     EXPECT_EQ(utils::shift(MyShiftableEnum::B, -3), MyShiftableEnum::INVALID);
 }
 
-TEST(EnumShift, ZeroShift) {
+TEST(EnumShiftTest, ZeroShift) {
     EXPECT_EQ(utils::shift(MyShiftableEnum::B, 0), MyShiftableEnum::B);
 }
