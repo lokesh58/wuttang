@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -15,6 +16,9 @@
 namespace chess {
 
 class Position {
+    static constexpr std::size_t BOARD_SIZE = 64;
+    using Board = std::array<Piece, BOARD_SIZE>;
+
 public:
     static constexpr std::string_view STANDARD_STARTING_FEN =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -25,6 +29,7 @@ public:
     std::string get_fen() const noexcept;
 
     Piece get_piece_at(Square square) const noexcept {
+        assert(static_cast<std::size_t>(square) < BOARD_SIZE);
         return board_[static_cast<std::size_t>(square)];
     }
     Color get_side_to_move() const noexcept {
@@ -67,15 +72,13 @@ public:
     void undo_last_move();
 
 private:
-    static constexpr std::size_t BOARD_SIZE = 64;
-    using Board = std::array<Piece, BOARD_SIZE>;
-
     Position() noexcept;
 
     static bool is_valid_fen(std::string_view fen_string) noexcept;
     static Position from_valid_fen(std::string_view fen_string) noexcept;
 
     void set_piece_at(Square square, Piece piece) noexcept {
+        assert(static_cast<std::size_t>(square) < BOARD_SIZE);
         board_[static_cast<std::size_t>(square)] = piece;
     }
     void add_castling_rights(CastlingRights rights_to_add) noexcept {
