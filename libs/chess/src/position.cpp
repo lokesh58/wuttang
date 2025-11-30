@@ -285,14 +285,14 @@ void Position::make_move(const Move& move) {
     if (!is_valid_move(move)) {
         throw std::invalid_argument("Invalid Move");
     }
-    do_make_move(move);
+    make_valid_move(move);
 }
 
 void Position::undo_last_move() {
     if (history_.empty()) {
         throw std::logic_error("No moves present in history");
     }
-    do_undo_last_move();
+    undo_last_move_with_non_empty_history();
 }
 
 bool Position::is_valid_move(const Move& move) const noexcept {
@@ -308,7 +308,7 @@ bool Position::is_valid_move(const Move& move) const noexcept {
     return true;
 }
 
-void Position::do_make_move(const Move& move) noexcept {
+void Position::make_valid_move(const Move& move) noexcept {
     const auto moved_piece = get_piece_at(move.get_from_square());
 
     const History new_history_entry{
@@ -430,7 +430,7 @@ void Position::do_make_move(const Move& move) noexcept {
     history_.push_back(new_history_entry);
 }
 
-void Position::do_undo_last_move() noexcept {
+void Position::undo_last_move_with_non_empty_history() noexcept {
     const auto& last_history_entry = history_.back();
 
     side_to_move_ = invert(side_to_move_);

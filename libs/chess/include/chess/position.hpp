@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #include "chess/castling_rights.hpp"
@@ -16,9 +17,6 @@
 namespace chess {
 
 class Position {
-    static constexpr std::size_t BOARD_SIZE = 64;
-    using Board = std::array<Piece, BOARD_SIZE>;
-
 public:
     static constexpr std::string_view STANDARD_STARTING_FEN =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -72,6 +70,38 @@ public:
     void undo_last_move();
 
 private:
+    static constexpr std::size_t BOARD_SIZE = 64;
+    static constexpr File KING_FILE = File::FILE_E;
+    static constexpr File KINGSIDE_ROOK_FILE = File::FILE_H;
+    static constexpr File QUEENSIDE_ROOK_FILE = File::FILE_A;
+    static constexpr std::array<CastlingRights, BOARD_SIZE>
+        CASTLING_RIGHTS_MASK = [] {
+            std::array<CastlingRights, BOARD_SIZE> mask;
+            mask.fill(CastlingRights::ALL);
+            const std::array<std::tuple<File, Rank, CastlingRights>, 6>
+                overrides{{
+                    {KING_FILE, Rank::RANK_1, CastlingRights::WHITE_ALL},
+                    {KINGSIDE_ROOK_FILE,
+                     Rank::RANK_1,
+                     CastlingRights::WHITE_KINGSIDE},
+                    {QUEENSIDE_ROOK_FILE,
+                     Rank::RANK_1,
+                     CastlingRights::WHITE_QUEENSIDE},
+                    {KING_FILE, Rank::RANK_8, CastlingRights::BLACK_ALL},
+                    {KINGSIDE_ROOK_FILE,
+                     Rank::RANK_8,
+                     CastlingRights::BLACK_KINGSIDE},
+                    {QUEENSIDE_ROOK_FILE,
+                     Rank::RANK_8,
+                     CastlingRights::BLACK_QUEENSIDE},
+                }};
+            for (const auto& [file, rank, rights_to_mask] : overrides) {
+                const auto square = get_square_from_file_rank(file, rank);
+                mask[static_cast<std::size_t>(square)] = ~rights_to_mask;
+            }
+            return mask;
+        }();
+
     Position() noexcept;
 
     static bool is_valid_fen(std::string_view fen_string) noexcept;
@@ -86,8 +116,8 @@ private:
     }
 
     bool is_valid_move(const Move& move) const noexcept;
-    void do_make_move(const Move& move) noexcept;
-    void do_undo_last_move() noexcept;
+    void make_valid_move(const Move& move) noexcept;
+    void undo_last_move_with_non_empty_history() noexcept;
     void add_piece(Square square, Piece piece) noexcept;
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;
@@ -99,7 +129,7 @@ private:
         std::uint8_t halfmove_clock;
     };
 
-    Board board_;
+    std::array<Piece, BOARD_SIZE> board_;
     Color side_to_move_;
     Square en_passant_square_;
     CastlingRights castling_rights_;
