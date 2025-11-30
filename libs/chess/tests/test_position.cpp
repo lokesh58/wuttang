@@ -248,3 +248,209 @@ TEST_F(PositionFenTest, ThrowsOnInvalidFEN) {
         std::invalid_argument
     ) << "Invalid fullmove number (too high).";
 }
+
+class PositionMoveTest : public testing::Test {
+protected:
+    void verify_make_undo(
+        std::string_view start_fen,
+        const chess::Move& move,
+        std::string_view expected_fen
+    ) {
+        auto pos = chess::Position::from_fen(start_fen);
+
+        pos.make_move(move);
+        EXPECT_EQ(pos.get_fen(), expected_fen)
+            << "FEN mismatch after make_move for move: " << start_fen << " -> "
+            << expected_fen;
+
+        pos.undo_last_move();
+        EXPECT_EQ(pos.get_fen(), start_fen)
+            << "FEN mismatch after undo_last_move for move: " << start_fen;
+    }
+};
+
+TEST_F(PositionMoveTest, QuietMove) {
+    // c7c6
+    verify_make_undo(
+        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+        chess::Move::quiet(chess::Square::C7, chess::Square::C6),
+        "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+    );
+    // Ng1f3
+    verify_make_undo(
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        chess::Move::quiet(chess::Square::G1, chess::Square::F3),
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1"
+    );
+    // e2e3
+    verify_make_undo(
+        "r1bqkbnr/pppppppp/2n5/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 2 2",
+        chess::Move::quiet(chess::Square::E2, chess::Square::E3),
+        "r1bqkbnr/pppppppp/2n5/8/8/4PN2/PPPP1PPP/RNBQKB1R b KQkq - 0 2"
+    );
+}
+
+TEST_F(PositionMoveTest, CaptureMove) {
+    // dxc4
+    verify_make_undo(
+        "r1bqkbnr/ppp1pppp/2n5/3p4/2P5/4PN2/PP1P1PPP/RNBQKB1R b KQkq c3 0 3",
+        chess::Move::capture(
+            chess::Square::D5,
+            chess::Square::C4,
+            chess::Piece::WHITE_PAWN
+        ),
+        "r1bqkbnr/ppp1pppp/2n5/8/2p5/4PN2/PP1P1PPP/RNBQKB1R w KQkq - 0 4"
+    );
+}
+
+TEST_F(PositionMoveTest, DoublePawnPushMove) {
+    // d7d5
+    verify_make_undo(
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1",
+        chess::Move::double_pawn_push(chess::Square::D7, chess::Square::D5),
+        "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq d6 0 2"
+    );
+}
+
+TEST_F(PositionMoveTest, EnPassantMove) {
+    // exf6
+    verify_make_undo(
+        "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
+        chess::Move::en_passant(chess::Square::E5, chess::Square::F6),
+        "rnbqkbnr/ppp1p1pp/5P2/3p4/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3"
+    );
+}
+
+TEST_F(PositionMoveTest, PromotionMove) {
+    // a7a8q
+    verify_make_undo(
+        "8/P7/8/8/8/8/k7/7K w - - 5 23",
+        chess::Move::promotion(
+            chess::Square::A7,
+            chess::Square::A8,
+            chess::Piece::WHITE_QUEEN
+        ),
+        "Q7/8/8/8/8/8/k7/7K b - - 0 23"
+    );
+}
+
+TEST_F(PositionMoveTest, PromotionCaptureMove) {
+    // axb8q
+    verify_make_undo(
+        "1n6/P7/8/8/8/8/k7/7K w - - 0 1",
+        chess::Move::promotion_capture(
+            chess::Square::A7,
+            chess::Square::B8,
+            chess::Piece::BLACK_KNIGHT,
+            chess::Piece::WHITE_QUEEN
+        ),
+        "1Q6/8/8/8/8/8/k7/7K b - - 0 1"
+    );
+}
+
+TEST_F(PositionMoveTest, CastleKingsideMove) {
+    // e1g1
+    verify_make_undo(
+        "rnbqk2r/pppp1ppp/5n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+        chess::Move::castle_kingside(chess::Square::E1, chess::Square::G1),
+        "rnbqk2r/pppp1ppp/5n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 5 4"
+    );
+}
+
+TEST_F(PositionMoveTest, CastleQueensideMove) {
+    // e1c1
+    verify_make_undo(
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1",
+        chess::Move::castle_queenside(chess::Square::E1, chess::Square::C1),
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 1 1"
+    );
+}
+
+TEST_F(PositionMoveTest, NullMove) {
+    verify_make_undo(
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        chess::Move::null(),
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 1 1"
+    );
+}
+
+TEST_F(PositionMoveTest, CastlingRightsUpdate) {
+    // Rook move a1b1 -> Remove White Queenside
+    verify_make_undo(
+        "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+        chess::Move::quiet(chess::Square::A1, chess::Square::B1),
+        "r3k2r/8/8/8/8/8/8/1R2K2R b Kkq - 1 1"
+    );
+
+    // Rook capture at h8 by White Rook -> Remove Black Kingside
+    verify_make_undo(
+        "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+        chess::Move::capture(
+            chess::Square::H1,
+            chess::Square::H8,
+            chess::Piece::BLACK_ROOK
+        ),
+        "r3k2R/8/8/8/8/8/8/R3K3 b Qq - 0 1"
+    );
+
+    // King move e1d1 -> Remove White Both
+    verify_make_undo(
+        "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+        chess::Move::quiet(chess::Square::E1, chess::Square::D1),
+        "r3k2r/8/8/8/8/8/8/R2K3R b kq - 1 1"
+    );
+}
+
+TEST_F(PositionMoveTest, MultipleMovesAndUndos) {
+    auto pos = chess::Position::standard();
+    std::vector<std::string> fens;
+    fens.push_back(pos.get_fen());
+
+    // 1. e2e4
+    auto m1 =
+        chess::Move::double_pawn_push(chess::Square::E2, chess::Square::E4);
+    pos.make_move(m1);
+    fens.push_back(pos.get_fen());
+    EXPECT_EQ(
+        fens.back(),
+        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+    );
+
+    // 2. e7e5
+    auto m2 =
+        chess::Move::double_pawn_push(chess::Square::E7, chess::Square::E5);
+    pos.make_move(m2);
+    fens.push_back(pos.get_fen());
+    EXPECT_EQ(
+        fens.back(),
+        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
+    );
+
+    // 3. g1f3
+    auto m3 = chess::Move::quiet(chess::Square::G1, chess::Square::F3);
+    pos.make_move(m3);
+    fens.push_back(pos.get_fen());
+    EXPECT_EQ(
+        fens.back(),
+        "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
+    );
+
+    // Undo 3
+    pos.undo_last_move();
+    EXPECT_EQ(pos.get_fen(), fens[2]);
+
+    // Undo 2
+    pos.undo_last_move();
+    EXPECT_EQ(pos.get_fen(), fens[1]);
+
+    // Redo 2 (manual)
+    pos.make_move(m2);
+    EXPECT_EQ(pos.get_fen(), fens[2]);
+
+    // Undo 2
+    pos.undo_last_move();
+
+    // Undo 1
+    pos.undo_last_move();
+    EXPECT_EQ(pos.get_fen(), fens[0]);
+}
