@@ -454,3 +454,15 @@ TEST_F(PositionMoveTest, MultipleMovesAndUndos) {
     pos.undo_last_move();
     EXPECT_EQ(pos.get_fen(), fens[0]);
 }
+
+TEST_F(PositionMoveTest, ThrowsOnInvalidMove) {
+    auto pos = chess::Position::standard();
+    auto invalid_move =
+        chess::Move::quiet(chess::Square::A1, chess::Square::B1);
+    EXPECT_THROW(pos.make_move(invalid_move), std::invalid_argument);
+}
+
+TEST_F(PositionMoveTest, ThrowsOnUndoWithEmptyHistory) {
+    auto pos = chess::Position::standard();
+    EXPECT_THROW(pos.undo_last_move(), std::logic_error);
+}
