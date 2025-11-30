@@ -83,6 +83,8 @@ private:
     }
 
     bool is_valid_move(const Move& move) const noexcept;
+    void do_make_move(const Move& move) noexcept;
+    void do_undo_last_move() noexcept;
     void add_piece(Square square, Piece piece) noexcept;
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;

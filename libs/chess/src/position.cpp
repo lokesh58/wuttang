@@ -25,6 +25,7 @@ Position::Position() noexcept :
         halfmove_clock_(0),
         initial_fullmove_number_(1) {
     board_.fill(Piece::NONE);
+    history_.reserve(100);
 };
 
 Position Position::standard() noexcept {
@@ -284,7 +285,30 @@ void Position::make_move(const Move& move) {
     if (!is_valid_move(move)) {
         throw std::invalid_argument("Invalid Move");
     }
+    do_make_move(move);
+}
 
+void Position::undo_last_move() {
+    if (history_.empty()) {
+        throw std::logic_error("No moves present in history");
+    }
+    do_undo_last_move();
+}
+
+bool Position::is_valid_move(const Move& move) const noexcept {
+    if (move.get_type() == MoveType::NULL_MOVE)
+        return true;
+    const auto moving_piece = get_piece_at(move.get_from_square());
+    if (moving_piece == Piece::NONE)
+        return false;
+    if (get_piece_color(moving_piece) != side_to_move_)
+        return false;
+    if (get_piece_at(move.get_to_square()) != move.get_captured_piece())
+        return false;
+    return true;
+}
+
+void Position::do_make_move(const Move& move) noexcept {
     const auto moved_piece = get_piece_at(move.get_from_square());
 
     const History new_history_entry{
@@ -406,11 +430,7 @@ void Position::make_move(const Move& move) {
     history_.push_back(new_history_entry);
 }
 
-void Position::undo_last_move() {
-    if (!history_.size()) {
-        throw std::runtime_error("No moves to undo");
-    }
-
+void Position::do_undo_last_move() noexcept {
     const auto& last_history_entry = history_.back();
 
     side_to_move_ = invert(side_to_move_);
@@ -489,19 +509,6 @@ void Position::undo_last_move() {
     }
 
     history_.pop_back();
-}
-
-bool Position::is_valid_move(const Move& move) const noexcept {
-    if (move.get_type() == MoveType::NULL_MOVE)
-        return true;
-    const auto moving_piece = get_piece_at(move.get_from_square());
-    if (moving_piece == Piece::NONE)
-        return false;
-    if (get_piece_color(moving_piece) != side_to_move_)
-        return false;
-    if (get_piece_at(move.get_to_square()) != move.get_captured_piece())
-        return false;
-    return true;
 }
 
 void Position::add_piece(Square square, Piece piece) noexcept {
