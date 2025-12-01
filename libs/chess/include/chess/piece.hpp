@@ -138,4 +138,12 @@ inline constexpr Piece get_piece_from_char(char piece_char) noexcept {
     }
 }
 
+inline constexpr std::size_t get_piece_index(Piece piece) noexcept {
+    const auto piece_type_index =
+        static_cast<std::size_t>(get_piece_type(piece)) - 1;
+    const auto piece_color_index =
+        (get_piece_color(piece) == Color::WHITE) ? 0 : 6;
+    return piece_type_index + piece_color_index;
+}
+
 }  // namespace chess

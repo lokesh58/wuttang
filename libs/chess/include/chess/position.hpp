@@ -65,6 +65,9 @@ public:
 
         return initial_fullmove_number_ + full_moves_played;
     }
+    std::uint64_t get_hash() const noexcept {
+        return hash_;
+    }
 
     void make_move(const Move& move);
     void undo_last_move();
@@ -107,6 +110,8 @@ private:
     static bool is_valid_fen(std::string_view fen_string) noexcept;
     static Position from_valid_fen(std::string_view fen_string) noexcept;
 
+    void compute_hash() noexcept;
+
     void set_piece_at(Square square, Piece piece) noexcept {
         assert(static_cast<std::size_t>(square) < BOARD_SIZE);
         board_[static_cast<std::size_t>(square)] = piece;
@@ -145,6 +150,7 @@ private:
         Square en_passant_square;
         CastlingRights castling_rights;
         std::uint8_t halfmove_clock;
+        std::uint64_t hash;
     };
 
     std::array<Piece, BOARD_SIZE> board_;
@@ -154,6 +160,7 @@ private:
     std::uint8_t halfmove_clock_;
     std::uint16_t initial_fullmove_number_;
     std::vector<History> history_;
+    std::uint64_t hash_;
 };
 
 }  // namespace chess

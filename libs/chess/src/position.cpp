@@ -14,6 +14,7 @@
 #include "chess/move.hpp"
 #include "chess/piece.hpp"
 #include "chess/square.hpp"
+#include "chess/zobrist_hash.hpp"
 
 namespace chess {
 
@@ -23,7 +24,8 @@ Position::Position() noexcept :
         en_passant_square_(Square::NO_SQ),
         castling_rights_(CastlingRights::NONE),
         halfmove_clock_(0),
-        initial_fullmove_number_(1) {
+        initial_fullmove_number_(1),
+        hash_(0) {
     board_.fill(Piece::NONE);
     history_.reserve(100);
 };
@@ -219,7 +221,30 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         position.initial_fullmove_number_
     );
 
+    position.compute_hash();
+
     return position;
+}
+
+void Position::compute_hash() noexcept {
+    hash_ = 0;
+
+    for (auto square : SquareRange{}) {
+        const auto piece = get_piece_at(square);
+        if (piece != Piece::NONE) {
+            hash_ ^= ZobristHash::get_piece_square_key(piece, square);
+        }
+    }
+
+    if (side_to_move_ == Color::BLACK) {
+        hash_ ^= ZobristHash::get_side_to_move_key();
+    }
+
+    hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
+
+    if (en_passant_square_ != Square::NO_SQ) {
+        hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
+    }
 }
 
 std::string Position::get_fen() const noexcept {
@@ -314,7 +339,13 @@ void Position::make_valid_move(const Move& move) noexcept {
         .en_passant_square = en_passant_square_,
         .castling_rights = castling_rights_,
         .halfmove_clock = halfmove_clock_,
+        .hash = hash_,
     });
+
+    if (en_passant_square_ != Square::NO_SQ) {
+        hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
+    }
+    hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
 
     switch (move.get_type()) {
         case MoveType::QUIET:
@@ -347,20 +378,42 @@ void Position::make_valid_move(const Move& move) noexcept {
     }
 
     if (move.get_type() != MoveType::NULL_MOVE) {
-        castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(move.get_from_square())];
-        castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(move.get_to_square())];
+        castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
+            move.get_from_square()
+        )];
+        castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
+            move.get_to_square()
+        )];
     }
 
+    if (en_passant_square_ != Square::NO_SQ) {
+        hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
+    }
+    hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
+
     side_to_move_ = invert(side_to_move_);
+    hash_ ^= ZobristHash::get_side_to_move_key();
 }
 
 void Position::undo_last_move_with_non_empty_history() noexcept {
     const auto& last_history_entry = history_.back();
 
-    side_to_move_ = invert(side_to_move_);
+    if (en_passant_square_ != Square::NO_SQ) {
+        hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
+    }
+    hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
+
     en_passant_square_ = last_history_entry.en_passant_square;
     castling_rights_ = last_history_entry.castling_rights;
     halfmove_clock_ = last_history_entry.halfmove_clock;
+
+    if (en_passant_square_ != Square::NO_SQ) {
+        hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
+    }
+    hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
+
+    side_to_move_ = invert(side_to_move_);
+    hash_ ^= ZobristHash::get_side_to_move_key();
 
     const auto& move = last_history_entry.move;
     switch (move.get_type()) {
@@ -397,7 +450,8 @@ void Position::undo_last_move_with_non_empty_history() noexcept {
 }
 
 void Position::make_quiet_move(const Move& move) noexcept {
-    if (get_piece_type(get_piece_at(move.get_from_square())) == PieceType::PAWN) {
+    if (get_piece_type(get_piece_at(move.get_from_square())) ==
+        PieceType::PAWN) {
         halfmove_clock_ = 0;
     } else {
         halfmove_clock_ += 1;
@@ -445,10 +499,7 @@ void Position::undo_en_passant_move(const Move& move) noexcept {
     const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
     add_piece(
         shift(move.get_to_square(), offset),
-        get_piece_from_color_type(
-            invert(side_to_move_),
-            PieceType::PAWN
-        )
+        get_piece_from_color_type(invert(side_to_move_), PieceType::PAWN)
     );
     move_piece(move.get_to_square(), move.get_from_square());
 }
@@ -556,16 +607,22 @@ void Position::undo_null_move() noexcept {
 
 void Position::add_piece(Square square, Piece piece) noexcept {
     set_piece_at(square, piece);
+    hash_ ^= ZobristHash::get_piece_square_key(piece, square);
 }
 
 void Position::remove_piece(Square square) noexcept {
+    const auto piece = get_piece_at(square);
+    assert(piece != Piece::NONE);
     set_piece_at(square, Piece::NONE);
+    hash_ ^= ZobristHash::get_piece_square_key(piece, square);
 }
 
 void Position::move_piece(Square from_square, Square to_square) noexcept {
     const auto moving_piece = get_piece_at(from_square);
     set_piece_at(from_square, Piece::NONE);
     set_piece_at(to_square, moving_piece);
+    hash_ ^= ZobristHash::get_piece_square_key(moving_piece, from_square);
+    hash_ ^= ZobristHash::get_piece_square_key(moving_piece, to_square);
 }
 
 }  // namespace chess
