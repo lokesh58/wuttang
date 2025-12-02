@@ -2,7 +2,9 @@
 
 #include <cstdint>
 #include <map>
+#include <set>
 #include <stdexcept>
+#include <vector>
 
 #include "chess/color.hpp"
 #include "chess/piece.hpp"
@@ -257,15 +259,22 @@ protected:
         std::string_view expected_fen
     ) {
         auto pos = chess::Position::from_fen(start_fen);
+        const auto start_hash = pos.get_hash();
 
         pos.make_move(move);
         EXPECT_EQ(pos.get_fen(), expected_fen)
             << "FEN mismatch after make_move for move: " << start_fen << " -> "
             << expected_fen;
 
+        // Even a null move changes the hash (side to move changes)
+        EXPECT_NE(pos.get_hash(), start_hash)
+            << "Hash shouldn't be the same after making a move";
+
         pos.undo_last_move();
         EXPECT_EQ(pos.get_fen(), start_fen)
             << "FEN mismatch after undo_last_move for move: " << start_fen;
+        EXPECT_EQ(pos.get_hash(), start_hash)
+            << "Hash should be the same after undoing a move";
     }
 };
 
@@ -405,54 +414,91 @@ TEST_F(PositionMoveTest, MultipleMovesAndUndos) {
     auto pos = chess::Position::standard();
     std::vector<std::string> fens;
     fens.push_back(pos.get_fen());
+    std::vector<std::uint64_t> hashes;
+    hashes.push_back(pos.get_hash());
 
     // 1. e2e4
     auto m1 =
         chess::Move::double_pawn_push(chess::Square::E2, chess::Square::E4);
     pos.make_move(m1);
     fens.push_back(pos.get_fen());
+    hashes.push_back(pos.get_hash());
     EXPECT_EQ(
         fens.back(),
         "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
     );
+    EXPECT_NE(hashes.back(), hashes[0]);
 
     // 2. e7e5
     auto m2 =
         chess::Move::double_pawn_push(chess::Square::E7, chess::Square::E5);
     pos.make_move(m2);
     fens.push_back(pos.get_fen());
+    hashes.push_back(pos.get_hash());
     EXPECT_EQ(
         fens.back(),
         "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2"
     );
+    EXPECT_NE(hashes.back(), hashes[1]);
 
     // 3. g1f3
     auto m3 = chess::Move::quiet(chess::Square::G1, chess::Square::F3);
     pos.make_move(m3);
     fens.push_back(pos.get_fen());
+    hashes.push_back(pos.get_hash());
     EXPECT_EQ(
         fens.back(),
         "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"
     );
+    EXPECT_NE(hashes.back(), hashes[2]);
+
+    // Check that all hashes are unique
+    const std::set<std::uint64_t> unique_hashes(hashes.begin(), hashes.end());
+    EXPECT_EQ(unique_hashes.size(), hashes.size())
+        << "Hashes for different positions should be unique.";
 
     // Undo 3
     pos.undo_last_move();
     EXPECT_EQ(pos.get_fen(), fens[2]);
+    EXPECT_EQ(pos.get_hash(), hashes[2]);
 
     // Undo 2
     pos.undo_last_move();
     EXPECT_EQ(pos.get_fen(), fens[1]);
+    EXPECT_EQ(pos.get_hash(), hashes[1]);
 
     // Redo 2 (manual)
     pos.make_move(m2);
     EXPECT_EQ(pos.get_fen(), fens[2]);
+    EXPECT_EQ(pos.get_hash(), hashes[2]);
 
     // Undo 2
     pos.undo_last_move();
+    EXPECT_EQ(pos.get_fen(), fens[1]);
+    EXPECT_EQ(pos.get_hash(), hashes[1]);
 
     // Undo 1
     pos.undo_last_move();
     EXPECT_EQ(pos.get_fen(), fens[0]);
+    EXPECT_EQ(pos.get_hash(), hashes[0]);
+}
+
+TEST_F(PositionMoveTest, SamePositionSameHash) {
+    auto pos = chess::Position::standard();
+    const auto start_hash = pos.get_hash();
+
+    // 1. Ng1-f3
+    pos.make_move(chess::Move::quiet(chess::Square::G1, chess::Square::F3));
+    // 2. Ng8-f6
+    pos.make_move(chess::Move::quiet(chess::Square::G8, chess::Square::F6));
+    // 3. Nf3-g1
+    pos.make_move(chess::Move::quiet(chess::Square::F3, chess::Square::G1));
+    // 4. Nf6-g8
+    pos.make_move(chess::Move::quiet(chess::Square::F6, chess::Square::G8));
+
+    EXPECT_EQ(pos.get_hash(), start_hash)
+        << "A sequence of moves returning to the starting position should "
+           "result in the same hash.";
 }
 
 TEST_F(PositionMoveTest, ThrowsOnInvalidMove) {
@@ -466,3 +512,4 @@ TEST_F(PositionMoveTest, ThrowsOnUndoWithEmptyHistory) {
     auto pos = chess::Position::standard();
     EXPECT_THROW(pos.undo_last_move(), std::logic_error);
 }
+
