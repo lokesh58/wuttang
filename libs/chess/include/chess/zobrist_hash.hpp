@@ -18,8 +18,8 @@ public:
     static std::uint64_t get_piece_square_key(Piece piece, Square square) {
         const auto piece_idx = get_piece_index(piece);
         const auto square_idx = static_cast<std::size_t>(square);
-        assert(0 <= piece_idx && piece_idx < 12);
-        assert(0 <= square_idx && square_idx < 64);
+        assert(piece_idx < 12);
+        assert(square_idx < 64);
         return KEYS.piece_square_keys[piece_idx][square_idx];
     }
 
@@ -31,14 +31,14 @@ public:
         CastlingRights castling_right
     ) {
         const auto rights_idx = static_cast<std::size_t>(castling_right);
-        assert(0 <= rights_idx && rights_idx < 16);
+        assert(rights_idx < 16);
         return KEYS.castling_right_keys[rights_idx];
     }
 
     static std::uint64_t get_en_passant_key(Square en_passant_square) {
         const auto ep_file = get_square_file(en_passant_square);
         const auto file_idx = static_cast<std::size_t>(ep_file);
-        assert(0 <= file_idx && file_idx < 8);
+        assert(file_idx < 8);
         return KEYS.en_passant_file_keys[file_idx];
     }
 
@@ -76,4 +76,3 @@ private:
 };
 
 }  // namespace chess
-
