@@ -53,10 +53,12 @@ private:
     static constexpr Keys KEYS = [] {
         Keys keys{};
 
-        std::uint64_t rng_seed = 24;
+        std::uint64_t state = 1070372;
         auto next_rng = [&] {
-            rng_seed = 1664525 * rng_seed + 1013904223;
-            return rng_seed;
+            std::uint64_t z = (state += 0x9e3779b97f4a7c15ULL);
+            z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+            z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+            return z ^ (z >> 31);
         };
 
         for (auto& piece_keys : keys.piece_square_keys) {
