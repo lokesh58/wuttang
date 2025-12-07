@@ -2,6 +2,7 @@
 add_executable(chess_tests)
 target_sources(chess_tests
     PRIVATE
+        test_bitboard.cpp
         test_color.cpp
         test_move_list.cpp
         test_piece.cpp
