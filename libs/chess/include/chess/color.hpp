@@ -5,17 +5,13 @@
 namespace chess {
 
 enum class Color : std::uint8_t {
-    NONE = 0,
-    WHITE = 1 << 4,
-    BLACK = 1 << 5,
-    BOTH = WHITE | BLACK,
+    WHITE = 0,
+    BLACK = 1,
+    NONE = 2,
 };
 
 inline constexpr Color invert(Color color) {
-    return static_cast<Color>(
-        static_cast<std::uint8_t>(color) ^
-        static_cast<std::uint8_t>(Color::BOTH)
-    );
+    return static_cast<Color>(static_cast<std::uint8_t>(color) ^ 1);
 }
 
 }  // namespace chess
