@@ -129,8 +129,6 @@ private:
     static bool is_valid_fen(std::string_view fen_string) noexcept;
     static Position from_valid_fen(std::string_view fen_string) noexcept;
 
-    void compute_hash() noexcept;
-
     void set_piece_at(Square square, Piece piece) noexcept {
         assert(static_cast<std::size_t>(square) < BOARD_SIZE);
         board_[static_cast<std::size_t>(square)] = piece;

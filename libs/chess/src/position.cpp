@@ -164,19 +164,22 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
             std::int8_t empty_squares = c - '0';
             placement_file = shift(placement_file, empty_squares);
         } else {
-            auto piece = get_piece_from_char(c);
-            position.add_piece(
-                get_square_from_file_rank(placement_file, placement_rank),
-                piece
-            );
+            const auto piece = get_piece_from_char(c);
+            const auto square =
+                get_square_from_file_rank(placement_file, placement_rank);
+            position.add_piece(square, piece);
             placement_file = shift(placement_file, 1);
         }
     }
 
     // 2. Active color
     std::string_view active_color = extract_part(' ');
-    position.side_to_move_ =
-        (active_color == "w") ? Color::WHITE : Color::BLACK;
+    if (active_color == "w") {
+        position.side_to_move_ = Color::WHITE;
+    } else {
+        position.side_to_move_ = Color::BLACK;
+        position.hash_ ^= ZobristHash::get_side_to_move_key();
+    }
 
     // 3. Castling availability
     std::string_view castling_availability = extract_part(' ');
@@ -196,13 +199,17 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
                 break;
         }
     }
+    position.hash_ ^=
+        ZobristHash::get_castling_rights_key(position.castling_rights_);
 
     // 4. En passant target square
     std::string_view en_passant = extract_part(' ');
     if (en_passant != "-") {
         const auto file = static_cast<File>(en_passant[0] - 'a');
         const auto rank = static_cast<Rank>(en_passant[1] - '1');
-        position.en_passant_square_ = get_square_from_file_rank(file, rank);
+        const auto ep_square = get_square_from_file_rank(file, rank);
+        position.en_passant_square_ = ep_square;
+        position.hash_ ^= ZobristHash::get_en_passant_key(ep_square);
     } else {
         position.en_passant_square_ = Square::NO_SQ;
     }
@@ -223,30 +230,7 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         position.initial_fullmove_number_
     );
 
-    position.compute_hash();
-
     return position;
-}
-
-void Position::compute_hash() noexcept {
-    hash_ = 0;
-
-    for (auto square : SquareRange{}) {
-        const auto piece = get_piece_at(square);
-        if (piece != Piece::NONE) {
-            hash_ ^= ZobristHash::get_piece_square_key(piece, square);
-        }
-    }
-
-    if (side_to_move_ == Color::BLACK) {
-        hash_ ^= ZobristHash::get_side_to_move_key();
-    }
-
-    hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
-
-    if (en_passant_square_ != Square::NO_SQ) {
-        hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
-    }
 }
 
 std::string Position::get_fen() const noexcept {
@@ -381,11 +365,11 @@ void Position::make_valid_move(const Move& move) noexcept {
 
     if (move.get_type() != MoveType::NULL_MOVE) {
         castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
-            move.get_from_square()
-        )];
-        castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
-            move.get_to_square()
-        )];
+                                move.get_from_square()
+                            )] &
+                            CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
+                                move.get_to_square()
+                            )];
     }
 
     if (en_passant_square_ != Square::NO_SQ) {
