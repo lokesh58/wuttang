@@ -25,7 +25,9 @@ Position::Position() noexcept :
         castling_rights_(CastlingRights::NONE),
         halfmove_clock_(0),
         initial_fullmove_number_(1),
-        hash_(0) {
+        hash_(0),
+        color_bitboards_{},
+        piece_type_bitboards_{} {
     board_.fill(Piece::NONE);
     history_.reserve(100);
 };
@@ -163,7 +165,7 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
             placement_file = shift(placement_file, empty_squares);
         } else {
             auto piece = get_piece_from_char(c);
-            position.set_piece_at(
+            position.add_piece(
                 get_square_from_file_rank(placement_file, placement_rank),
                 piece
             );
@@ -608,6 +610,9 @@ void Position::undo_null_move() noexcept {
 void Position::add_piece(Square square, Piece piece) noexcept {
     set_piece_at(square, piece);
     hash_ ^= ZobristHash::get_piece_square_key(piece, square);
+
+    bitboard_of(get_piece_color(piece)).set(square);
+    bitboard_of(get_piece_type(piece)).set(square);
 }
 
 void Position::remove_piece(Square square) noexcept {
@@ -615,6 +620,9 @@ void Position::remove_piece(Square square) noexcept {
     assert(piece != Piece::NONE);
     set_piece_at(square, Piece::NONE);
     hash_ ^= ZobristHash::get_piece_square_key(piece, square);
+
+    bitboard_of(get_piece_color(piece)).clear(square);
+    bitboard_of(get_piece_type(piece)).clear(square);
 }
 
 void Position::move_piece(Square from_square, Square to_square) noexcept {
@@ -623,6 +631,11 @@ void Position::move_piece(Square from_square, Square to_square) noexcept {
     set_piece_at(to_square, moving_piece);
     hash_ ^= ZobristHash::get_piece_square_key(moving_piece, from_square);
     hash_ ^= ZobristHash::get_piece_square_key(moving_piece, to_square);
+
+    const auto move_mask =
+        Bitboard::from_square(from_square) | Bitboard::from_square(to_square);
+    bitboard_of(get_piece_color(moving_piece)) ^= move_mask;
+    bitboard_of(get_piece_type(moving_piece)) ^= move_mask;
 }
 
 }  // namespace chess

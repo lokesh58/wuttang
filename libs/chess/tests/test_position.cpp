@@ -6,12 +6,61 @@
 #include <stdexcept>
 #include <vector>
 
+#include "chess/bitboard.hpp"
 #include "chess/color.hpp"
 #include "chess/piece.hpp"
 #include "chess/position.hpp"
 #include "chess/square.hpp"
 
-class PositionFenTest : public testing::Test {
+class PositionTestBase : public testing::Test {
+protected:
+    void verify_bitboards(const chess::Position& pos) {
+        chess::Bitboard expected_white_bb(0);
+        chess::Bitboard expected_black_bb(0);
+
+        chess::Bitboard type_bitboards[7];  // NONE=0 (unused), PAWN=1, etc.
+        for (int i = 0; i < 7; ++i)
+            type_bitboards[i] = chess::Bitboard(0);
+
+        for (const auto square : chess::SquareRange{}) {
+            const auto piece = pos.get_piece_at(square);
+            if (piece == chess::Piece::NONE) {
+                continue;
+            }
+
+            const auto color = chess::get_piece_color(piece);
+            const auto type = chess::get_piece_type(piece);
+
+            EXPECT_TRUE(pos.get_occupancy(color).get(square))
+                << "Occupancy for color " << (int) color << " missing at "
+                << to_string(square);
+            EXPECT_TRUE(pos.get_bitboard(type).get(square))
+                << "Bitboard for type " << (int) type << " missing at "
+                << to_string(square);
+            EXPECT_TRUE(pos.get_bitboard(color, type).get(square))
+                << "Bitboard for color/type missing at " << to_string(square);
+
+            if (color == chess::Color::WHITE)
+                expected_white_bb.set(square);
+            else if (color == chess::Color::BLACK)
+                expected_black_bb.set(square);
+
+            type_bitboards[static_cast<int>(type)].set(square);
+        }
+
+        EXPECT_EQ(pos.get_occupancy(chess::Color::WHITE), expected_white_bb);
+        EXPECT_EQ(pos.get_occupancy(chess::Color::BLACK), expected_black_bb);
+        EXPECT_EQ(pos.get_occupancy(), expected_white_bb | expected_black_bb);
+
+        for (int i = 1; i <= 6; ++i) {
+            chess::PieceType type = static_cast<chess::PieceType>(i);
+            EXPECT_EQ(pos.get_bitboard(type), type_bitboards[i])
+                << "Mismatch for PieceType " << i;
+        }
+    }
+};
+
+class PositionFenTest : public PositionTestBase {
 protected:
     struct ExpectedPosition {
         std::map<chess::Square, chess::Piece> pieces;
@@ -61,6 +110,8 @@ protected:
         EXPECT_EQ(pos.get_en_passant_square(), expected.en_passant_square);
         EXPECT_EQ(pos.get_halfmove_clock(), expected.halfmove_clock);
         EXPECT_EQ(pos.get_fullmove_number(), expected.fullmove_number);
+
+        verify_bitboards(pos);
     }
 };
 
@@ -251,7 +302,7 @@ TEST_F(PositionFenTest, ThrowsOnInvalidFEN) {
     ) << "Invalid fullmove number (too high).";
 }
 
-class PositionMoveTest : public testing::Test {
+class PositionMoveTest : public PositionTestBase {
 protected:
     void verify_make_undo(
         std::string_view start_fen,
@@ -261,10 +312,14 @@ protected:
         auto pos = chess::Position::from_fen(start_fen);
         const auto start_hash = pos.get_hash();
 
+        verify_bitboards(pos);
+
         pos.make_move(move);
         EXPECT_EQ(pos.get_fen(), expected_fen)
             << "FEN mismatch after make_move for move: " << start_fen << " -> "
             << expected_fen;
+
+        verify_bitboards(pos);
 
         // Even a null move changes the hash (side to move changes)
         EXPECT_NE(pos.get_hash(), start_hash)
@@ -275,6 +330,8 @@ protected:
             << "FEN mismatch after undo_last_move for move: " << start_fen;
         EXPECT_EQ(pos.get_hash(), start_hash)
             << "Hash should be the same after undoing a move";
+
+        verify_bitboards(pos);
     }
 };
 
@@ -512,4 +569,3 @@ TEST_F(PositionMoveTest, ThrowsOnUndoWithEmptyHistory) {
     auto pos = chess::Position::standard();
     EXPECT_THROW(pos.undo_last_move(), std::logic_error);
 }
-

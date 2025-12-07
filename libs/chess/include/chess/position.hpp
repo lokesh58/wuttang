@@ -8,6 +8,7 @@
 #include <tuple>
 #include <vector>
 
+#include "chess/bitboard.hpp"
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
 #include "chess/move.hpp"
@@ -67,6 +68,24 @@ public:
     }
     std::uint64_t get_hash() const noexcept {
         return hash_;
+    }
+
+    Bitboard get_occupancy() const noexcept {
+        return color_bitboards_[0] | color_bitboards_[1];
+    }
+    Bitboard get_occupancy(Color color) const noexcept {
+        assert(color != Color::NONE);
+        return color_bitboards_[static_cast<std::size_t>(color)];
+    }
+    Bitboard get_bitboard(PieceType type) const noexcept {
+        assert(type != PieceType::NONE);
+        return piece_type_bitboards_[static_cast<std::size_t>(type)];
+    }
+    Bitboard get_bitboard(Color color, PieceType type) const noexcept {
+        assert(color != Color::NONE);
+        assert(type != PieceType::NONE);
+        return color_bitboards_[static_cast<std::size_t>(color)] &
+               piece_type_bitboards_[static_cast<std::size_t>(type)];
     }
 
     void make_move(const Move& move);
@@ -145,6 +164,13 @@ private:
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;
 
+    Bitboard& bitboard_of(Color color) noexcept {
+        return color_bitboards_[static_cast<std::size_t>(color)];
+    }
+    Bitboard& bitboard_of(PieceType type) noexcept {
+        return piece_type_bitboards_[static_cast<std::size_t>(type)];
+    }
+
     struct History {
         Move move;
         Square en_passant_square;
@@ -161,6 +187,8 @@ private:
     std::uint16_t initial_fullmove_number_;
     std::vector<History> history_;
     std::uint64_t hash_;
+    std::array<Bitboard, 2> color_bitboards_;
+    std::array<Bitboard, 7> piece_type_bitboards_;
 };
 
 }  // namespace chess
