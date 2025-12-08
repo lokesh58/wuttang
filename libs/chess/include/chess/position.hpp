@@ -88,8 +88,8 @@ public:
                piece_type_bitboards_[static_cast<std::size_t>(type)];
     }
 
-    void make_move(const Move& move);
-    void undo_last_move();
+    void make_move(const Move& move) noexcept;
+    void undo_last_move() noexcept;
 
 private:
     static constexpr std::size_t BOARD_SIZE = 64;
@@ -137,8 +137,8 @@ private:
         castling_rights_ |= rights_to_add;
     }
 
-    bool is_valid_move(const Move& move) const noexcept;
-    void make_valid_move(const Move& move) noexcept;
+    bool is_well_formed_move(const Move& move) const noexcept;
+    void make_well_formed_move(const Move& move) noexcept;
     void undo_last_move_with_non_empty_history() noexcept;
     void make_quiet_move(const Move& move) noexcept;
     void undo_quiet_move(const Move& move) noexcept;

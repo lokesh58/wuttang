@@ -292,21 +292,17 @@ std::string Position::get_fen() const noexcept {
     return fen;
 }
 
-void Position::make_move(const Move& move) {
-    if (!is_valid_move(move)) {
-        throw std::invalid_argument("Invalid Move");
-    }
-    make_valid_move(move);
+void Position::make_move(const Move& move) noexcept {
+    assert(is_well_formed_move(move));
+    make_well_formed_move(move);
 }
 
-void Position::undo_last_move() {
-    if (history_.empty()) {
-        throw std::logic_error("No moves present in history");
-    }
+void Position::undo_last_move() noexcept {
+    assert(history_.size() > 0);
     undo_last_move_with_non_empty_history();
 }
 
-bool Position::is_valid_move(const Move& move) const noexcept {
+bool Position::is_well_formed_move(const Move& move) const noexcept {
     if (move.get_type() == MoveType::NULL_MOVE)
         return true;
     const auto moving_piece = get_piece_at(move.get_from_square());
@@ -319,7 +315,7 @@ bool Position::is_valid_move(const Move& move) const noexcept {
     return true;
 }
 
-void Position::make_valid_move(const Move& move) noexcept {
+void Position::make_well_formed_move(const Move& move) noexcept {
     history_.push_back({
         .move = move,
         .en_passant_square = en_passant_square_,
