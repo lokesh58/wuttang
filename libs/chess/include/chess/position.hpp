@@ -136,6 +136,12 @@ private:
     void add_castling_rights(CastlingRights rights_to_add) noexcept {
         castling_rights_ |= rights_to_add;
     }
+    Bitboard& bitboard_of(Color color) noexcept {
+        return color_bitboards_[static_cast<std::size_t>(color)];
+    }
+    Bitboard& bitboard_of(PieceType type) noexcept {
+        return piece_type_bitboards_[static_cast<std::size_t>(type)];
+    }
 
     bool is_well_formed_move(const Move& move) const noexcept;
     void make_well_formed_move(const Move& move) noexcept;
@@ -161,13 +167,6 @@ private:
     void add_piece(Square square, Piece piece) noexcept;
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;
-
-    Bitboard& bitboard_of(Color color) noexcept {
-        return color_bitboards_[static_cast<std::size_t>(color)];
-    }
-    Bitboard& bitboard_of(PieceType type) noexcept {
-        return piece_type_bitboards_[static_cast<std::size_t>(type)];
-    }
 
     struct History {
         Move move;
