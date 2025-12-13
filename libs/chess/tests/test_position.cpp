@@ -557,3 +557,51 @@ TEST_F(PositionMoveTest, SamePositionSameHash) {
         << "A sequence of moves returning to the starting position should "
            "result in the same hash.";
 }
+
+TEST(PositionTest, IsSquareAttacked) {
+    // Setup:
+    // White King at E1.
+    // Black Rook at A1 (Attacks rank 1).
+    // Black Knight at C3 (Attacks E2, A2, B1, D1).
+    // White Pawn at E2.
+    //
+    // FEN: 8/8/8/8/8/2n5/4P3/r3K3 w - - 0 1
+    auto pos = chess::Position::from_fen("8/8/8/8/8/2n5/4P3/r3K3 w - - 0 1");
+
+    // E1 is attacked by Rook at A1 (Rank 1 is clear between A1 and E1)
+    EXPECT_TRUE(pos.is_square_attacked(chess::Square::E1, chess::Color::BLACK));
+
+    // E2 is attacked by Knight at C3
+    EXPECT_TRUE(pos.is_square_attacked(chess::Square::E2, chess::Color::BLACK));
+
+    // D1 is attacked by Knight at C3
+    EXPECT_TRUE(pos.is_square_attacked(chess::Square::D1, chess::Color::BLACK));
+
+    // D1 is also attacked by Rook at A1
+    // (We can't easily distinguish source, but it returns true)
+
+    // F1 is attacked by King at E1
+    EXPECT_TRUE(pos.is_square_attacked(chess::Square::F1, chess::Color::WHITE));
+
+    // H1 is NOT attacked by anyone
+    EXPECT_FALSE(
+        pos.is_square_attacked(chess::Square::H1, chess::Color::BLACK)
+    );
+    EXPECT_FALSE(
+        pos.is_square_attacked(chess::Square::H1, chess::Color::WHITE)
+    );
+
+    // Blocked ray test
+    // Place a blocker at C1.
+    // FEN: 8/8/8/8/8/2n5/4P3/r1B1K3 w - - 0 1
+    // White Bishop at C1 blocks A1-E1.
+    auto pos_blocked =
+        chess::Position::from_fen("8/8/8/8/8/2n5/4P3/r1B1K3 w - - 0 1");
+
+    // E1 should NOT be attacked by Rook (blocked by C1)
+    // But check other attackers... Knight at C3 attacks E2, not E1.
+    // So E1 should be safe from BLACK.
+    EXPECT_FALSE(
+        pos_blocked.is_square_attacked(chess::Square::E1, chess::Color::BLACK)
+    );
+}

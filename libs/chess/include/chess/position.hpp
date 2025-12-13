@@ -88,6 +88,8 @@ public:
                piece_type_bitboards_[static_cast<std::size_t>(type)];
     }
 
+    bool is_square_attacked(Square sq, Color attacker) const noexcept;
+
     void make_move(const Move& move) noexcept;
     void undo_last_move() noexcept;
 

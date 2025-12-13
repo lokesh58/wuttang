@@ -9,6 +9,7 @@
 #include <string_view>
 #include <system_error>
 
+#include "chess/attacks.hpp"
 #include "chess/castling_rights.hpp"
 #include "chess/color.hpp"
 #include "chess/move.hpp"
@@ -616,6 +617,44 @@ void Position::move_piece(Square from_square, Square to_square) noexcept {
         Bitboard::from_square(from_square) | Bitboard::from_square(to_square);
     bitboard_of(get_piece_color(moving_piece)) ^= move_mask;
     bitboard_of(get_piece_type(moving_piece)) ^= move_mask;
+}
+
+bool Position::is_square_attacked(Square sq, Color attacker) const noexcept {
+    const Bitboard occupancy = get_occupancy();
+
+    // Pawn attacks
+    if (Attacks::get_pawn_attacks(invert(attacker), sq) &
+        get_bitboard(attacker, PieceType::PAWN)) {
+        return true;
+    }
+
+    // Knight attacks
+    if (Attacks::get_knight_attacks(sq) &
+        get_bitboard(attacker, PieceType::KNIGHT)) {
+        return true;
+    }
+
+    // King attacks
+    if (Attacks::get_king_attacks(sq) &
+        get_bitboard(attacker, PieceType::KING)) {
+        return true;
+    }
+
+    // Bishop / Queen attacks
+    Bitboard bishop_queen = get_bitboard(attacker, PieceType::BISHOP) |
+                            get_bitboard(attacker, PieceType::QUEEN);
+    if (Attacks::get_bishop_attacks(sq, occupancy) & bishop_queen) {
+        return true;
+    }
+
+    // Rook / Queen attacks
+    Bitboard rook_queen = get_bitboard(attacker, PieceType::ROOK) |
+                          get_bitboard(attacker, PieceType::QUEEN);
+    if (Attacks::get_rook_attacks(sq, occupancy) & rook_queen) {
+        return true;
+    }
+
+    return false;
 }
 
 }  // namespace chess
