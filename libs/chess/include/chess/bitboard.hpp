@@ -50,6 +50,14 @@ public:
     constexpr Square lsb_square() const noexcept {
         return static_cast<Square>(lsb_index());
     }
+    constexpr int msb_index() const noexcept {
+        return 63 - std::countl_zero(bits_);
+    }
+    constexpr Square msb_square() const noexcept {
+        if (bits_ == 0ULL)
+            return Square::NO_SQ;
+        return static_cast<Square>(msb_index());
+    }
     constexpr std::uint64_t value() const noexcept {
         return bits_;
     }

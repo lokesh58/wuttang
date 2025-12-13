@@ -26,7 +26,7 @@ TEST(BitboardTest, FromSquare) {
 
 TEST(BitboardTest, SetGetClearToggle) {
     Bitboard bb;
-    
+
     // Set
     bb.set(Square::A1);
     EXPECT_TRUE(bb.get(Square::A1));
@@ -37,11 +37,11 @@ TEST(BitboardTest, SetGetClearToggle) {
     EXPECT_EQ(bb.pop_count(), 2);
 
     // Toggle
-    bb.toggle(Square::A1); // off
+    bb.toggle(Square::A1);  // off
     EXPECT_FALSE(bb.get(Square::A1));
     EXPECT_EQ(bb.pop_count(), 1);
 
-    bb.toggle(Square::A1); // on
+    bb.toggle(Square::A1);  // on
     EXPECT_TRUE(bb.get(Square::A1));
     EXPECT_EQ(bb.pop_count(), 2);
 
@@ -68,7 +68,7 @@ TEST(BitboardTest, PopCount) {
 TEST(BitboardTest, LsbOperations) {
     Bitboard bb;
     bb.set(Square::E4);
-    bb.set(Square::A1); // LSB
+    bb.set(Square::A1);  // LSB
     bb.set(Square::H8);
 
     EXPECT_EQ(bb.lsb_square(), Square::A1);
@@ -84,10 +84,39 @@ TEST(BitboardTest, LsbOperations) {
 
     sq = bb.pop_lsb();
     EXPECT_EQ(sq, Square::H8);
-    
+
     // Empty
     sq = bb.pop_lsb();
     EXPECT_EQ(sq, Square::NO_SQ);
+}
+
+TEST(BitboardTest, MsbOperations) {
+    Bitboard bb;
+    bb.set(Square::A1);
+    bb.set(Square::E4);  // Middle
+    bb.set(Square::H8);  // MSB (Square 63)
+
+    // msb_index for H8 is 63.
+    EXPECT_EQ(bb.msb_square(), Square::H8);
+    EXPECT_EQ(bb.msb_index(), 63);
+
+    // Remove H8
+    bb.clear(Square::H8);
+    // Now MSB is E4 (Square 28).
+    EXPECT_EQ(bb.msb_square(), Square::E4);
+    EXPECT_EQ(bb.msb_index(), 28);
+
+    // Remove E4
+    bb.clear(Square::E4);
+    // Now MSB is A1 (Square 0).
+    EXPECT_EQ(bb.msb_square(), Square::A1);
+    EXPECT_EQ(bb.msb_index(), 0);
+
+    // Remove A1
+    bb.clear(Square::A1);
+    // Now MSB is NO_SQ
+    EXPECT_EQ(bb.msb_square(), Square::NO_SQ);
+    EXPECT_EQ(bb.msb_index(), -1);
 }
 
 TEST(BitboardTest, MoreThanOne) {
@@ -110,7 +139,7 @@ TEST(BitboardTest, Operators) {
 
     // &
     EXPECT_EQ((b1 & b2).value(), 0ULL);
-    
+
     // |
     EXPECT_EQ((b1 | b2).value(), ~0ULL);
 
@@ -147,8 +176,9 @@ TEST(BitboardTest, Iterator) {
 
 TEST(BitboardTest, ConstIterator) {
     // Ensure it works on const objects
-    const Bitboard bb = Bitboard::from_square(Square::E4) | Bitboard::from_square(Square::H8);
-    
+    const Bitboard bb =
+        Bitboard::from_square(Square::E4) | Bitboard::from_square(Square::H8);
+
     int count = 0;
     for (auto it = bb.begin(); it != bb.end(); ++it) {
         count++;
@@ -156,4 +186,4 @@ TEST(BitboardTest, ConstIterator) {
     EXPECT_EQ(count, 2);
 }
 
-} // namespace chess
+}  // namespace chess
