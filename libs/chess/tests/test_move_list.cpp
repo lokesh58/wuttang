@@ -18,6 +18,15 @@ TEST(MoveListTest, PushBackAndSize) {
     EXPECT_FALSE(move_list.empty());
 }
 
+TEST(MoveListTest, PopBack) {
+    chess::MoveList move_list;
+    move_list.push_back(chess::Move{});
+    move_list.push_back(chess::Move{});
+
+    move_list.pop_back();
+    EXPECT_EQ(move_list.size(), 1);
+}
+
 TEST(MoveListTest, Clear) {
     chess::MoveList move_list;
     move_list.push_back(chess::Move{});

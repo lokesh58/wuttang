@@ -24,6 +24,11 @@ public:
         moves_[count_++] = move;
     }
 
+    void pop_back() noexcept {
+        assert(count_ > 0);
+        count_--;
+    }
+
     // Standard container accessors
     [[nodiscard]]
     std::size_t size() const noexcept {
