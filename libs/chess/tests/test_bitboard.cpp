@@ -24,6 +24,14 @@ TEST(BitboardTest, FromSquare) {
     EXPECT_FALSE(bb.get(Square::E5));
 }
 
+TEST(BitboardTest, FromFile) {
+    constexpr Bitboard bb = Bitboard::from_file(File::FILE_D);
+    EXPECT_EQ(bb.pop_count(), 8);
+    for (auto sq : bb) {
+        EXPECT_EQ(get_square_file(sq), File::FILE_D);
+    }
+}
+
 TEST(BitboardTest, SetGetClearToggle) {
     Bitboard bb;
 

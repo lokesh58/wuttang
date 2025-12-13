@@ -18,6 +18,10 @@ public:
         return Bitboard(1ULL << static_cast<std::uint8_t>(sq));
     }
 
+    static constexpr Bitboard from_file(File f) noexcept {
+        return Bitboard(0x0101010101010101ULL << static_cast<std::uint8_t>(f));
+    }
+
     // --- Bit Manipulation ---
     constexpr bool get(Square sq) const noexcept {
         return (bits_ & (1ULL << static_cast<std::uint8_t>(sq))) != 0;
