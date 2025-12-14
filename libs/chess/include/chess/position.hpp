@@ -18,6 +18,8 @@
 namespace chess {
 
 class Position {
+    friend class MoveGenerator;
+
 public:
     static constexpr std::string_view STANDARD_STARTING_FEN =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -169,6 +171,13 @@ private:
     void add_piece(Square square, Piece piece) noexcept;
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;
+
+    bool is_square_attacked(
+        Square sq,
+        Color attacker,
+        Bitboard occupancy,
+        Bitboard attackers_mask
+    ) const noexcept;
 
     struct History {
         Move move;

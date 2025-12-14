@@ -620,37 +620,47 @@ void Position::move_piece(Square from_square, Square to_square) noexcept {
 }
 
 bool Position::is_square_attacked(Square sq, Color attacker) const noexcept {
-    const Bitboard occupancy = get_occupancy();
+    return is_square_attacked(sq, attacker, get_occupancy(), Bitboard(~0ULL));
+}
 
+bool Position::is_square_attacked(
+    Square sq,
+    Color attacker,
+    Bitboard occupancy,
+    Bitboard attackers_mask
+) const noexcept {
     // Pawn attacks
     if (Attacks::get_pawn_attacks(invert(attacker), sq) &
-        get_bitboard(attacker, PieceType::PAWN)) {
+        get_bitboard(attacker, PieceType::PAWN) & attackers_mask) {
         return true;
     }
 
     // Knight attacks
     if (Attacks::get_knight_attacks(sq) &
-        get_bitboard(attacker, PieceType::KNIGHT)) {
+        get_bitboard(attacker, PieceType::KNIGHT) & attackers_mask) {
         return true;
     }
 
     // King attacks
     if (Attacks::get_king_attacks(sq) &
-        get_bitboard(attacker, PieceType::KING)) {
+        get_bitboard(attacker, PieceType::KING) & attackers_mask) {
         return true;
     }
 
     // Bishop / Queen attacks
-    Bitboard bishop_queen = get_bitboard(attacker, PieceType::BISHOP) |
-                            get_bitboard(attacker, PieceType::QUEEN);
-    if (Attacks::get_bishop_attacks(sq, occupancy) & bishop_queen) {
+    Bitboard bishop_queen = (get_bitboard(attacker, PieceType::BISHOP) |
+                             get_bitboard(attacker, PieceType::QUEEN)) &
+                            attackers_mask;
+    if (bishop_queen &&
+        (Attacks::get_bishop_attacks(sq, occupancy) & bishop_queen)) {
         return true;
     }
 
     // Rook / Queen attacks
-    Bitboard rook_queen = get_bitboard(attacker, PieceType::ROOK) |
-                          get_bitboard(attacker, PieceType::QUEEN);
-    if (Attacks::get_rook_attacks(sq, occupancy) & rook_queen) {
+    Bitboard rook_queen = (get_bitboard(attacker, PieceType::ROOK) |
+                           get_bitboard(attacker, PieceType::QUEEN)) &
+                          attackers_mask;
+    if (rook_queen && (Attacks::get_rook_attacks(sq, occupancy) & rook_queen)) {
         return true;
     }
 
