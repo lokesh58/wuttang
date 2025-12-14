@@ -7,15 +7,14 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include <wuttang/chess/bitboard.hpp>
+#include <wuttang/chess/castling_rights.hpp>
+#include <wuttang/chess/color.hpp>
+#include <wuttang/chess/move.hpp>
+#include <wuttang/chess/piece.hpp>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/bitboard.hpp"
-#include "chess/castling_rights.hpp"
-#include "chess/color.hpp"
-#include "chess/move.hpp"
-#include "chess/piece.hpp"
-#include "chess/square.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 class Position {
     friend class MoveGenerator;
@@ -199,4 +198,4 @@ private:
     std::array<Bitboard, 7> piece_type_bitboards_;
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess

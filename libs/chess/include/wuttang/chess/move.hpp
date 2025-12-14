@@ -1,11 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <wuttang/chess/piece.hpp>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/piece.hpp"
-#include "chess/square.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 enum class MoveType : std::uint8_t {
     NULL_MOVE,
@@ -164,4 +163,4 @@ private:
     Piece promotion_piece_;
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess

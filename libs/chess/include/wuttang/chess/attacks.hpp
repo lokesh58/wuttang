@@ -2,12 +2,11 @@
 
 #include <array>
 #include <cstddef>
+#include <wuttang/chess/bitboard.hpp>
+#include <wuttang/chess/color.hpp>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/bitboard.hpp"
-#include "chess/color.hpp"
-#include "chess/square.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 namespace detail {
 
@@ -301,4 +300,4 @@ private:
     }
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess

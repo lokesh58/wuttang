@@ -2,17 +2,16 @@
 
 #include <cassert>
 #include <cstdint>
+#include <wuttang/chess/attacks.hpp>
+#include <wuttang/chess/bitboard.hpp>
+#include <wuttang/chess/color.hpp>
+#include <wuttang/chess/move.hpp>
+#include <wuttang/chess/move_list.hpp>
+#include <wuttang/chess/piece.hpp>
+#include <wuttang/chess/position.hpp>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/attacks.hpp"
-#include "chess/bitboard.hpp"
-#include "chess/color.hpp"
-#include "chess/move.hpp"
-#include "chess/move_list.hpp"
-#include "chess/piece.hpp"
-#include "chess/position.hpp"
-#include "chess/square.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 enum class MoveGenType {
     ALL,       // All pseudo-legal moves
@@ -379,4 +378,4 @@ private:
     }
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess

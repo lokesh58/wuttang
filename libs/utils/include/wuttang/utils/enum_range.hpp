@@ -3,7 +3,7 @@
 #include <iterator>
 #include <type_traits>
 
-namespace utils {
+namespace wuttang::utils {
 
 template<typename EnumType, EnumType beginVal, EnumType endVal>
 class EnumRange {
@@ -76,4 +76,4 @@ private:
     Underlying begin_, end_;
 };
 
-}  // namespace utils
+}  // namespace wuttang::utils

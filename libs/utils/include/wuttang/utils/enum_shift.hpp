@@ -3,33 +3,33 @@
 #include <concepts>
 #include <type_traits>
 
-namespace utils {
+namespace wuttang::utils {
 
 template<typename T>
 struct EnumTraits;
 
 template<typename T>
 concept Shiftable = requires {
-    typename utils::EnumTraits<T>::ArithmeticType;
+    typename wuttang::utils::EnumTraits<T>::ArithmeticType;
     // Ensure the underlying type can be converted to the arithmetic type
     requires std::convertible_to<
         std::underlying_type_t<T>,
-        typename utils::EnumTraits<T>::ArithmeticType
+        typename wuttang::utils::EnumTraits<T>::ArithmeticType
     >;
 
-    { utils::EnumTraits<T>::min } -> std::convertible_to<T>;
-    { utils::EnumTraits<T>::max } -> std::convertible_to<T>;
-    { utils::EnumTraits<T>::sentinel } -> std::convertible_to<T>;
+    { wuttang::utils::EnumTraits<T>::min } -> std::convertible_to<T>;
+    { wuttang::utils::EnumTraits<T>::max } -> std::convertible_to<T>;
+    { wuttang::utils::EnumTraits<T>::sentinel } -> std::convertible_to<T>;
 };
 
 template<Shiftable T>
 inline constexpr T shift(
     T value,
-    typename utils::EnumTraits<T>::ArithmeticType delta
+    typename wuttang::utils::EnumTraits<T>::ArithmeticType delta
 ) noexcept {
     using Underlying = std::underlying_type_t<T>;
-    using Arithmetic = typename utils::EnumTraits<T>::ArithmeticType;
-    using Traits = utils::EnumTraits<T>;
+    using Arithmetic = typename wuttang::utils::EnumTraits<T>::ArithmeticType;
+    using Traits = wuttang::utils::EnumTraits<T>;
 
     // Perform arithmetic using the specified ArithmeticType
     const auto val_arith =
@@ -49,4 +49,4 @@ inline constexpr T shift(
     return static_cast<T>(static_cast<Underlying>(new_val));
 }
 
-}  // namespace utils
+}  // namespace wuttang::utils

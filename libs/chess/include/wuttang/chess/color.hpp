@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace chess {
+namespace wuttang::chess {
 
 enum class Color : std::uint8_t {
     WHITE = 0,
@@ -14,4 +14,4 @@ inline constexpr Color invert(Color color) {
     return static_cast<Color>(static_cast<std::uint8_t>(color) ^ 1);
 }
 
-}  // namespace chess
+}  // namespace wuttang::chess

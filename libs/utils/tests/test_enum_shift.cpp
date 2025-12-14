@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
 
-#include "utils/enum_shift.hpp"
+#include <wuttang/utils/enum_shift.hpp>
+
+using namespace wuttang::utils;
 
 enum class MyShiftableEnum { A, B, C, D, E, INVALID };
 
 template<>
-struct utils::EnumTraits<MyShiftableEnum> {
+struct wuttang::utils::EnumTraits<MyShiftableEnum> {
     using ArithmeticType = int;
     static constexpr MyShiftableEnum min = MyShiftableEnum::A;
     static constexpr MyShiftableEnum max = MyShiftableEnum::E;
@@ -13,25 +15,25 @@ struct utils::EnumTraits<MyShiftableEnum> {
 };
 
 TEST(EnumShiftTest, PositiveShift) {
-    EXPECT_EQ(utils::shift(MyShiftableEnum::A, 2), MyShiftableEnum::C);
-    EXPECT_EQ(utils::shift(MyShiftableEnum::C, 2), MyShiftableEnum::E);
+    EXPECT_EQ(shift(MyShiftableEnum::A, 2), MyShiftableEnum::C);
+    EXPECT_EQ(shift(MyShiftableEnum::C, 2), MyShiftableEnum::E);
 }
 
 TEST(EnumShiftTest, NegativeShift) {
-    EXPECT_EQ(utils::shift(MyShiftableEnum::E, -2), MyShiftableEnum::C);
-    EXPECT_EQ(utils::shift(MyShiftableEnum::C, -2), MyShiftableEnum::A);
+    EXPECT_EQ(shift(MyShiftableEnum::E, -2), MyShiftableEnum::C);
+    EXPECT_EQ(shift(MyShiftableEnum::C, -2), MyShiftableEnum::A);
 }
 
 TEST(EnumShiftTest, ShiftToBoundaries) {
-    EXPECT_EQ(utils::shift(MyShiftableEnum::A, 4), MyShiftableEnum::E);
-    EXPECT_EQ(utils::shift(MyShiftableEnum::E, -4), MyShiftableEnum::A);
+    EXPECT_EQ(shift(MyShiftableEnum::A, 4), MyShiftableEnum::E);
+    EXPECT_EQ(shift(MyShiftableEnum::E, -4), MyShiftableEnum::A);
 }
 
 TEST(EnumShiftTest, ShiftBeyondBoundaries) {
-    EXPECT_EQ(utils::shift(MyShiftableEnum::D, 2), MyShiftableEnum::INVALID);
-    EXPECT_EQ(utils::shift(MyShiftableEnum::B, -3), MyShiftableEnum::INVALID);
+    EXPECT_EQ(shift(MyShiftableEnum::D, 2), MyShiftableEnum::INVALID);
+    EXPECT_EQ(shift(MyShiftableEnum::B, -3), MyShiftableEnum::INVALID);
 }
 
 TEST(EnumShiftTest, ZeroShift) {
-    EXPECT_EQ(utils::shift(MyShiftableEnum::B, 0), MyShiftableEnum::B);
+    EXPECT_EQ(shift(MyShiftableEnum::B, 0), MyShiftableEnum::B);
 }

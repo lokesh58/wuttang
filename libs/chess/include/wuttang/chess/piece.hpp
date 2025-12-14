@@ -3,10 +3,9 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <wuttang/chess/color.hpp>
 
-#include "chess/color.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 enum class PieceType : std::uint8_t {
     NONE,
@@ -147,4 +146,4 @@ inline constexpr Piece get_piece_from_char(char piece_char) noexcept {
     }
 }
 
-}  // namespace chess
+}  // namespace wuttang::chess

@@ -1,23 +1,21 @@
-#include "chess/position.hpp"
-
 #include <cassert>
-#include <cctype>
 #include <charconv>
 #include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <wuttang/chess/attacks.hpp>
+#include <wuttang/chess/castling_rights.hpp>
+#include <wuttang/chess/color.hpp>
+#include <wuttang/chess/move.hpp>
+#include <wuttang/chess/piece.hpp>
+#include <wuttang/chess/position.hpp>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/attacks.hpp"
-#include "chess/castling_rights.hpp"
-#include "chess/color.hpp"
-#include "chess/move.hpp"
-#include "chess/piece.hpp"
-#include "chess/square.hpp"
-#include "chess/zobrist_hash.hpp"
+#include "zobrist_hash.hpp"
 
-namespace chess {
+namespace wuttang::chess {
 
 Position::Position() noexcept :
         board_{},
@@ -667,4 +665,4 @@ bool Position::is_square_attacked(
     return false;
 }
 
-}  // namespace chess
+}  // namespace wuttang::chess

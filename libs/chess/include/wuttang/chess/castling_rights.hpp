@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <utils/enum_flags.hpp>
+#include <wuttang/utils/enum_flags.hpp>
 
-namespace chess {
+namespace wuttang::chess {
 
 enum class CastlingRights : std::uint8_t {
     NONE = 0,
@@ -16,9 +16,10 @@ enum class CastlingRights : std::uint8_t {
     ALL = WHITE_ALL | BLACK_ALL,
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess
 
 template<>
-struct utils::enable_bitmask_operators<chess::CastlingRights> {
+struct wuttang::utils::
+    enable_bitmask_operators<wuttang::chess::CastlingRights> {
     static constexpr bool value = true;
 };

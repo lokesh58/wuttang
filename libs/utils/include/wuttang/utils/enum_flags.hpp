@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace utils {
+namespace wuttang::utils {
 
 /**
  * @brief Trait to enable bitwise operators for an enum class.
@@ -19,11 +19,11 @@ struct enable_bitmask_operators {
     static constexpr bool value = false;
 };
 
-}  // namespace utils
+}  // namespace wuttang::utils
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E>::type
     operator|(E lhs, E rhs) {
     using underlying = typename std::underlying_type<E>::type;
     return static_cast<E>(
@@ -32,8 +32,8 @@ constexpr
 }
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E>::type
     operator&(E lhs, E rhs) {
     using underlying = typename std::underlying_type<E>::type;
     return static_cast<E>(
@@ -42,8 +42,8 @@ constexpr
 }
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E>::type
     operator^(E lhs, E rhs) {
     using underlying = typename std::underlying_type<E>::type;
     return static_cast<E>(
@@ -52,32 +52,32 @@ constexpr
 }
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E>::type
     operator~(E lhs) {
     using underlying = typename std::underlying_type<E>::type;
     return static_cast<E>(~static_cast<underlying>(lhs));
 }
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E&>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E&>::type
     operator|=(E& lhs, E rhs) {
     lhs = lhs | rhs;
     return lhs;
 }
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E&>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E&>::type
     operator&=(E& lhs, E rhs) {
     lhs = lhs & rhs;
     return lhs;
 }
 
 template<typename E>
-constexpr
-    typename std::enable_if<utils::enable_bitmask_operators<E>::value, E&>::type
+constexpr typename std::
+    enable_if<wuttang::utils::enable_bitmask_operators<E>::value, E&>::type
     operator^=(E& lhs, E rhs) {
     lhs = lhs ^ rhs;
     return lhs;

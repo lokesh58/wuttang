@@ -1,100 +1,78 @@
 #include <gtest/gtest.h>
 
-#include "chess/piece.hpp"
+#include <wuttang/chess.hpp>
+
+using namespace wuttang::chess;
 
 TEST(PieceTest, GetPieceFromColorType) {
     EXPECT_EQ(
-        chess::get_piece_from_color_type(
-            chess::Color::WHITE,
-            chess::PieceType::PAWN
-        ),
-        chess::Piece::WHITE_PAWN
+        get_piece_from_color_type(Color::WHITE, PieceType::PAWN),
+        Piece::WHITE_PAWN
     );
 
     EXPECT_EQ(
-        chess::get_piece_from_color_type(
-            chess::Color::BLACK,
-            chess::PieceType::KING
-        ),
-        chess::Piece::BLACK_KING
+        get_piece_from_color_type(Color::BLACK, PieceType::KING),
+        Piece::BLACK_KING
     );
 
     EXPECT_EQ(
-        chess::get_piece_from_color_type(
-            chess::Color::NONE,
-            chess::PieceType::NONE
-        ),
-        chess::Piece::NONE
+        get_piece_from_color_type(Color::NONE, PieceType::NONE),
+        Piece::NONE
     );
 }
 
 TEST(PieceTest, GetPieceColor) {
-    EXPECT_EQ(
-        chess::get_piece_color(chess::Piece::WHITE_PAWN),
-        chess::Color::WHITE
-    );
+    EXPECT_EQ(get_piece_color(Piece::WHITE_PAWN), Color::WHITE);
 
-    EXPECT_EQ(
-        chess::get_piece_color(chess::Piece::BLACK_KING),
-        chess::Color::BLACK
-    );
+    EXPECT_EQ(get_piece_color(Piece::BLACK_KING), Color::BLACK);
 
-    EXPECT_EQ(chess::get_piece_color(chess::Piece::NONE), chess::Color::NONE);
+    EXPECT_EQ(get_piece_color(Piece::NONE), Color::NONE);
 }
 
 TEST(PieceTest, GetPieceType) {
-    EXPECT_EQ(
-        chess::get_piece_type(chess::Piece::WHITE_PAWN),
-        chess::PieceType::PAWN
-    );
+    EXPECT_EQ(get_piece_type(Piece::WHITE_PAWN), PieceType::PAWN);
 
-    EXPECT_EQ(
-        chess::get_piece_type(chess::Piece::BLACK_KING),
-        chess::PieceType::KING
-    );
+    EXPECT_EQ(get_piece_type(Piece::BLACK_KING), PieceType::KING);
 
-    EXPECT_EQ(
-        chess::get_piece_type(chess::Piece::NONE),
-        chess::PieceType::NONE
-    );
+    EXPECT_EQ(get_piece_type(Piece::NONE), PieceType::NONE);
 }
 
 TEST(PieceTest, GetPieceChar) {
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_PAWN), 'P');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_KNIGHT), 'N');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_BISHOP), 'B');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_ROOK), 'R');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_QUEEN), 'Q');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::WHITE_KING), 'K');
+    EXPECT_EQ(get_piece_char(Piece::WHITE_PAWN), 'P');
+    EXPECT_EQ(get_piece_char(Piece::WHITE_KNIGHT), 'N');
+    EXPECT_EQ(get_piece_char(Piece::WHITE_BISHOP), 'B');
+    EXPECT_EQ(get_piece_char(Piece::WHITE_ROOK), 'R');
+    EXPECT_EQ(get_piece_char(Piece::WHITE_QUEEN), 'Q');
+    EXPECT_EQ(get_piece_char(Piece::WHITE_KING), 'K');
 
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::BLACK_PAWN), 'p');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::BLACK_KNIGHT), 'n');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::BLACK_BISHOP), 'b');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::BLACK_ROOK), 'r');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::BLACK_QUEEN), 'q');
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::BLACK_KING), 'k');
+    EXPECT_EQ(get_piece_char(Piece::BLACK_PAWN), 'p');
+    EXPECT_EQ(get_piece_char(Piece::BLACK_KNIGHT), 'n');
+    EXPECT_EQ(get_piece_char(Piece::BLACK_BISHOP), 'b');
+    EXPECT_EQ(get_piece_char(Piece::BLACK_ROOK), 'r');
+    EXPECT_EQ(get_piece_char(Piece::BLACK_QUEEN), 'q');
+    EXPECT_EQ(get_piece_char(Piece::BLACK_KING), 'k');
 
-    EXPECT_EQ(chess::get_piece_char(chess::Piece::NONE), '.');
+    EXPECT_EQ(get_piece_char(Piece::NONE), '.');
 }
 
 TEST(PieceTest, GetPieceFromChar) {
-    EXPECT_EQ(chess::get_piece_from_char('P'), chess::Piece::WHITE_PAWN);
-    EXPECT_EQ(chess::get_piece_from_char('N'), chess::Piece::WHITE_KNIGHT);
-    EXPECT_EQ(chess::get_piece_from_char('B'), chess::Piece::WHITE_BISHOP);
-    EXPECT_EQ(chess::get_piece_from_char('R'), chess::Piece::WHITE_ROOK);
-    EXPECT_EQ(chess::get_piece_from_char('Q'), chess::Piece::WHITE_QUEEN);
-    EXPECT_EQ(chess::get_piece_from_char('K'), chess::Piece::WHITE_KING);
+    EXPECT_EQ(get_piece_from_char('P'), Piece::WHITE_PAWN);
+    EXPECT_EQ(get_piece_from_char('N'), Piece::WHITE_KNIGHT);
+    EXPECT_EQ(get_piece_from_char('B'), Piece::WHITE_BISHOP);
+    EXPECT_EQ(get_piece_from_char('R'), Piece::WHITE_ROOK);
+    EXPECT_EQ(get_piece_from_char('Q'), Piece::WHITE_QUEEN);
+    EXPECT_EQ(get_piece_from_char('K'), Piece::WHITE_KING);
 
-    EXPECT_EQ(chess::get_piece_from_char('p'), chess::Piece::BLACK_PAWN);
-    EXPECT_EQ(chess::get_piece_from_char('n'), chess::Piece::BLACK_KNIGHT);
-    EXPECT_EQ(chess::get_piece_from_char('b'), chess::Piece::BLACK_BISHOP);
-    EXPECT_EQ(chess::get_piece_from_char('r'), chess::Piece::BLACK_ROOK);
-    EXPECT_EQ(chess::get_piece_from_char('q'), chess::Piece::BLACK_QUEEN);
-    EXPECT_EQ(chess::get_piece_from_char('k'), chess::Piece::BLACK_KING);
+    EXPECT_EQ(get_piece_from_char('p'), Piece::BLACK_PAWN);
+    EXPECT_EQ(get_piece_from_char('n'), Piece::BLACK_KNIGHT);
+    EXPECT_EQ(get_piece_from_char('b'), Piece::BLACK_BISHOP);
+    EXPECT_EQ(get_piece_from_char('r'), Piece::BLACK_ROOK);
+    EXPECT_EQ(get_piece_from_char('q'), Piece::BLACK_QUEEN);
+    EXPECT_EQ(get_piece_from_char('k'), Piece::BLACK_KING);
 
-    EXPECT_EQ(chess::get_piece_from_char('.'), chess::Piece::NONE);
-    EXPECT_EQ(chess::get_piece_from_char('a'), chess::Piece::NONE);
-    EXPECT_EQ(chess::get_piece_from_char('Z'), chess::Piece::NONE);
-    EXPECT_EQ(chess::get_piece_from_char(' '), chess::Piece::NONE);
-    EXPECT_EQ(chess::get_piece_from_char('?'), chess::Piece::NONE);
+    EXPECT_EQ(get_piece_from_char('.'), Piece::NONE);
+    EXPECT_EQ(get_piece_from_char('a'), Piece::NONE);
+    EXPECT_EQ(get_piece_from_char('Z'), Piece::NONE);
+    EXPECT_EQ(get_piece_from_char(' '), Piece::NONE);
+    EXPECT_EQ(get_piece_from_char('?'), Piece::NONE);
 }

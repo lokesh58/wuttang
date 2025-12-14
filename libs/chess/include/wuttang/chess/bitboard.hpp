@@ -4,10 +4,9 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/square.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 class Bitboard {
 public:
@@ -178,4 +177,4 @@ constexpr Bitboard::Iterator Bitboard::end() const noexcept {
     return Iterator();
 }
 
-}  // namespace chess
+}  // namespace wuttang::chess

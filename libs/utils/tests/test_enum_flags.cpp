@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "utils/enum_flags.hpp"
+#include <wuttang/utils/enum_flags.hpp>
+
+using namespace wuttang::utils;
 
 enum class MyEnum {
     NONE = 0,
@@ -10,7 +12,7 @@ enum class MyEnum {
 };
 
 template<>
-struct utils::enable_bitmask_operators<MyEnum> {
+struct wuttang::utils::enable_bitmask_operators<MyEnum> {
     static constexpr bool value = true;
 };
 

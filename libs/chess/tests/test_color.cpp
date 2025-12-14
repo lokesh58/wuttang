@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "chess/color.hpp"
+#include <wuttang/chess.hpp>
+
+using namespace wuttang::chess;
 
 TEST(ColorTest, Invert) {
-    EXPECT_EQ(chess::invert(chess::Color::WHITE), chess::Color::BLACK);
-    EXPECT_EQ(chess::invert(chess::Color::BLACK), chess::Color::WHITE);
+    EXPECT_EQ(invert(Color::WHITE), Color::BLACK);
+    EXPECT_EQ(invert(Color::BLACK), Color::WHITE);
 }

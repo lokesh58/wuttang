@@ -4,12 +4,11 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <wuttang/chess/castling_rights.hpp>
+#include <wuttang/chess/piece.hpp>
+#include <wuttang/chess/square.hpp>
 
-#include "chess/castling_rights.hpp"
-#include "chess/piece.hpp"
-#include "chess/square.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 class ZobristHash {
 public:
@@ -82,4 +81,4 @@ private:
     }();
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess

@@ -2,10 +2,10 @@
 
 #include <cstdint>
 #include <string>
-#include <utils/enum_range.hpp>
-#include <utils/enum_shift.hpp>
+#include <wuttang/utils/enum_range.hpp>
+#include <wuttang/utils/enum_shift.hpp>
 
-namespace chess {
+namespace wuttang::chess {
 
 // clang-format off
 
@@ -35,7 +35,7 @@ enum class Square : std::uint8_t {
 
 // clang-format on
 
-using utils::shift;  // Expose shift in chess namespace
+using wuttang::utils::shift;  // Expose shift in chess namespace
 
 inline constexpr Square get_square_from_file_rank(
     File square_file,
@@ -62,9 +62,9 @@ inline constexpr Rank get_square_rank(Square square) noexcept {
     );
 }
 
-using FileRange = utils::EnumRange<File, File::FILE_A, File::FILE_H>;
-using RankRange = utils::EnumRange<Rank, Rank::RANK_1, Rank::RANK_8>;
-using SquareRange = utils::EnumRange<Square, Square::A1, Square::H8>;
+using FileRange = wuttang::utils::EnumRange<File, File::FILE_A, File::FILE_H>;
+using RankRange = wuttang::utils::EnumRange<Rank, Rank::RANK_1, Rank::RANK_8>;
+using SquareRange = wuttang::utils::EnumRange<Square, Square::A1, Square::H8>;
 
 inline std::string to_string(Square s) noexcept {
     const auto file = get_square_file(s);
@@ -77,28 +77,28 @@ inline std::string to_string(Square s) noexcept {
     return str;
 }
 
-}  // namespace chess
+}  // namespace wuttang::chess
 
 template<>
-struct utils::EnumTraits<chess::File> {
+struct wuttang::utils::EnumTraits<wuttang::chess::File> {
     using ArithmeticType = std::int8_t;
-    static constexpr auto min = chess::File::FILE_A;
-    static constexpr auto max = chess::File::FILE_H;
-    static constexpr auto sentinel = chess::File::FILE_INVALID;
+    static constexpr auto min = wuttang::chess::File::FILE_A;
+    static constexpr auto max = wuttang::chess::File::FILE_H;
+    static constexpr auto sentinel = wuttang::chess::File::FILE_INVALID;
 };
 
 template<>
-struct utils::EnumTraits<chess::Rank> {
+struct wuttang::utils::EnumTraits<wuttang::chess::Rank> {
     using ArithmeticType = std::int8_t;
-    static constexpr auto min = chess::Rank::RANK_1;
-    static constexpr auto max = chess::Rank::RANK_8;
-    static constexpr auto sentinel = chess::Rank::RANK_INVALID;
+    static constexpr auto min = wuttang::chess::Rank::RANK_1;
+    static constexpr auto max = wuttang::chess::Rank::RANK_8;
+    static constexpr auto sentinel = wuttang::chess::Rank::RANK_INVALID;
 };
 
 template<>
-struct utils::EnumTraits<chess::Square> {
+struct wuttang::utils::EnumTraits<wuttang::chess::Square> {
     using ArithmeticType = std::int8_t;
-    static constexpr auto min = chess::Square::A1;
-    static constexpr auto max = chess::Square::H8;
-    static constexpr auto sentinel = chess::Square::NO_SQ;
+    static constexpr auto min = wuttang::chess::Square::A1;
+    static constexpr auto max = wuttang::chess::Square::H8;
+    static constexpr auto sentinel = wuttang::chess::Square::NO_SQ;
 };

@@ -3,10 +3,9 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <wuttang/chess/move.hpp>
 
-#include "chess/move.hpp"
-
-namespace chess {
+namespace wuttang::chess {
 
 class MoveList {
     static constexpr std::size_t MAX_MOVES = 256;
@@ -77,4 +76,4 @@ private:
     std::size_t count_ = 0;
 };
 
-}  // namespace chess
+}  // namespace wuttang::chess
