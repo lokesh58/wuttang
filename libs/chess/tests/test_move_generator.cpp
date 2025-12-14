@@ -7,10 +7,7 @@
 TEST(MoveGenerator, StandardPositionLegalMoves) {
     auto pos = chess::Position::standard();
     chess::MoveList moves;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
-        pos,
-        moves
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(pos, moves);
     EXPECT_EQ(moves.size(), 20);
 }
 
@@ -20,10 +17,7 @@ TEST(MoveGenerator, Checkmate) {
         "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3"
     );
     chess::MoveList moves;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
-        pos,
-        moves
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(pos, moves);
     EXPECT_EQ(moves.size(), 0);
 }
 
@@ -32,7 +26,7 @@ TEST(MoveGenerator, Stalemate) {
     auto pos_stalemate =
         chess::Position::from_fen("7k/5K2/6Q1/8/8/8/8/8 b - - 0 1");
     chess::MoveList moves;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(
         pos_stalemate,
         moves
     );
@@ -45,10 +39,7 @@ TEST(MoveGenerator, CastlingBothSides) {
     auto pos =
         chess::Position::from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
     chess::MoveList moves;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
-        pos,
-        moves
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(pos, moves);
 
     bool has_kingside = false;
     bool has_queenside = false;
@@ -67,10 +58,7 @@ TEST(MoveGenerator, CastlingBlocked) {
     auto pos =
         chess::Position::from_fen("r3k2r/8/8/8/8/8/8/R3KB1R w KQkq - 0 1");
     chess::MoveList moves;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
-        pos,
-        moves
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(pos, moves);
 
     bool has_kingside = false;
     bool has_queenside = false;
@@ -89,7 +77,7 @@ TEST(MoveGenerator, PinnedPiece) {
     auto pos_pin = chess::Position::from_fen("8/8/8/b7/8/8/3P4/4K3 w - - 0 1");
     // d2 pawn cannot push (d2-d3) or double push (d2-d4) because it would expose K to B.
     chess::MoveList pinned_moves;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(
         pos_pin,
         pinned_moves
     );
@@ -145,10 +133,7 @@ TEST(MoveGenerator, MoveGenerationTypes) {
 
     // 1. CAPTURES
     chess::MoveList captures;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::CAPTURES>(
-        pos,
-        captures
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::CAPTURES>(pos, captures);
     for (const auto& m : captures) {
         auto type = m.get_type();
         EXPECT_TRUE(
@@ -161,10 +146,7 @@ TEST(MoveGenerator, MoveGenerationTypes) {
 
     // 2. QUIETS
     chess::MoveList quiets;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::QUIETS>(
-        pos,
-        quiets
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::QUIETS>(pos, quiets);
     for (const auto& m : quiets) {
         auto type = m.get_type();
         EXPECT_TRUE(
@@ -179,7 +161,7 @@ TEST(MoveGenerator, MoveGenerationTypes) {
 
     // 3. ALL (Pseudo-Legal)
     chess::MoveList all;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::ALL>(pos, all);
+    chess::MoveGenerator::generate<chess::MoveGenType::ALL>(pos, all);
 
     // In this implementation, ALL should be exactly CAPTURES + QUIETS
     // because MoveGenerator::generate<ALL> calls both helpers.
@@ -189,10 +171,7 @@ TEST(MoveGenerator, MoveGenerationTypes) {
 
     // 4. LEGAL
     chess::MoveList legal;
-    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
-        pos,
-        legal
-    );
+    chess::MoveGenerator::generate<chess::MoveGenType::LEGAL>(pos, legal);
 
     // Legal moves must be a subset of Pseudo-Legal moves
     EXPECT_LE(legal.size(), all.size());

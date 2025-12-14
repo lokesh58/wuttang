@@ -14,7 +14,7 @@
 
 namespace chess {
 
-enum class MoveGenerationType {
+enum class MoveGenType {
     ALL,       // All pseudo-legal moves
     LEGAL,     // All legal moves
     CAPTURES,  // Pseudo-legal captures
@@ -23,7 +23,7 @@ enum class MoveGenerationType {
 
 class MoveGenerator {
 public:
-    template<MoveGenerationType Type>
+    template<MoveGenType Type>
     static void generate(Position& position, MoveList& moves) noexcept {
         const Color us = position.get_side_to_move();
         const std::size_t start_index = moves.size();
@@ -36,12 +36,12 @@ public:
         generate_moves_for_piece<Type, PieceType::QUEEN>(position, us, moves);
         generate_king_moves<Type>(position, us, moves);
 
-        if constexpr (Type != MoveGenerationType::CAPTURES) {
+        if constexpr (Type != MoveGenType::CAPTURES) {
             generate_castling_moves(position, us, moves);
         }
 
         // 2. Filter for Legality if requested
-        if constexpr (Type == MoveGenerationType::LEGAL) {
+        if constexpr (Type == MoveGenType::LEGAL) {
             std::size_t i = start_index;
             while (i < moves.size()) {
                 if (is_legal_move(position, moves[i])) {
@@ -107,7 +107,7 @@ public:
     }
 
 private:
-    template<MoveGenerationType Type>
+    template<MoveGenType Type>
     static void generate_pawn_moves(
         const Position& pos,
         Color us,
@@ -117,7 +117,7 @@ private:
         const Bitboard promotion_ranks = Bitboard::from_rank(Rank::RANK_1) |
                                          Bitboard::from_rank(Rank::RANK_8);
 
-        if constexpr (Type != MoveGenerationType::CAPTURES) {
+        if constexpr (Type != MoveGenType::CAPTURES) {
             const Bitboard occupancy = pos.get_occupancy();
             const std::int8_t UP = us == Color::WHITE ? 8 : -8;
 
@@ -154,7 +154,7 @@ private:
         }
 
         // Captures
-        if constexpr (Type != MoveGenerationType::QUIETS) {
+        if constexpr (Type != MoveGenType::QUIETS) {
             const Bitboard them = pos.get_occupancy(invert(us));
 
             Bitboard left_captures;
@@ -265,7 +265,7 @@ private:
         }
     }
 
-    template<MoveGenerationType Type, PieceType PType>
+    template<MoveGenType Type, PieceType PType>
     static void generate_moves_for_piece(
         const Position& pos,
         Color us,
@@ -276,9 +276,9 @@ private:
         const Bitboard them = pos.get_occupancy(invert(us));
 
         Bitboard valid_targets;
-        if constexpr (Type == MoveGenerationType::CAPTURES) {
+        if constexpr (Type == MoveGenType::CAPTURES) {
             valid_targets = them;
-        } else if constexpr (Type == MoveGenerationType::QUIETS) {
+        } else if constexpr (Type == MoveGenType::QUIETS) {
             valid_targets = ~occupancy;
         } else {
             valid_targets = ~pos.get_occupancy(us);
@@ -309,7 +309,7 @@ private:
         }
     }
 
-    template<MoveGenerationType Type>
+    template<MoveGenType Type>
     static void generate_king_moves(
         const Position& pos,
         Color us,
@@ -321,9 +321,9 @@ private:
         const Square from = king.lsb_square();
 
         Bitboard valid_targets;
-        if constexpr (Type == MoveGenerationType::CAPTURES) {
+        if constexpr (Type == MoveGenType::CAPTURES) {
             valid_targets = pos.get_occupancy(invert(us));
-        } else if constexpr (Type == MoveGenerationType::QUIETS) {
+        } else if constexpr (Type == MoveGenType::QUIETS) {
             valid_targets = ~pos.get_occupancy();
         } else {
             valid_targets = ~pos.get_occupancy(us);
