@@ -134,3 +134,66 @@ TEST(MoveGenerator, IsLegalMove) {
     chess::Move b_e3 = chess::Move::quiet(chess::Square::C1, chess::Square::E3);
     EXPECT_TRUE(chess::MoveGenerator::is_legal_move(pos_block, b_e3));
 }
+
+TEST(MoveGenerator, MoveGenerationTypes) {
+    // Setup a position with captures, quiet moves, and castling
+    // White: Ke1, Ra1, Pe4, Nc3
+    // Black: Ke8, Ra8, Pd5, Pb5
+    // FEN: r3k3/8/8/1p1p4/4P3/2N5/8/R3K3 w Qq - 0 1
+    auto pos =
+        chess::Position::from_fen("r3k3/8/8/1p1p4/4P3/2N5/8/R3K3 w Qq - 0 1");
+
+    // 1. CAPTURES
+    chess::MoveList captures;
+    chess::MoveGenerator::generate<chess::MoveGenerationType::CAPTURES>(
+        pos,
+        captures
+    );
+    for (const auto& m : captures) {
+        auto type = m.get_type();
+        EXPECT_TRUE(
+            type == chess::MoveType::CAPTURE ||
+            type == chess::MoveType::EN_PASSANT ||
+            type == chess::MoveType::PROMOTION_CAPTURE
+        ) << "Found non-capture move in CAPTURES generation: "
+          << static_cast<int>(type);
+    }
+
+    // 2. QUIETS
+    chess::MoveList quiets;
+    chess::MoveGenerator::generate<chess::MoveGenerationType::QUIETS>(
+        pos,
+        quiets
+    );
+    for (const auto& m : quiets) {
+        auto type = m.get_type();
+        EXPECT_TRUE(
+            type == chess::MoveType::QUIET ||
+            type == chess::MoveType::DOUBLE_PAWN_PUSH ||
+            type == chess::MoveType::PROMOTION ||
+            type == chess::MoveType::CASTLE_KINGSIDE ||
+            type == chess::MoveType::CASTLE_QUEENSIDE
+        ) << "Found capture move in QUIETS generation: "
+          << static_cast<int>(type);
+    }
+
+    // 3. ALL (Pseudo-Legal)
+    chess::MoveList all;
+    chess::MoveGenerator::generate<chess::MoveGenerationType::ALL>(pos, all);
+
+    // In this implementation, ALL should be exactly CAPTURES + QUIETS
+    // because MoveGenerator::generate<ALL> calls both helpers.
+    EXPECT_EQ(all.size(), captures.size() + quiets.size())
+        << "ALL count (" << all.size() << ") != CAPTURES (" << captures.size()
+        << ") + QUIETS (" << quiets.size() << ")";
+
+    // 4. LEGAL
+    chess::MoveList legal;
+    chess::MoveGenerator::generate<chess::MoveGenerationType::LEGAL>(
+        pos,
+        legal
+    );
+
+    // Legal moves must be a subset of Pseudo-Legal moves
+    EXPECT_LE(legal.size(), all.size());
+}
