@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include <tuple>
 #include <vector>
 #include <wuttang/chess/bitboard.hpp>
 #include <wuttang/chess/castling_rights.hpp>
@@ -70,6 +69,15 @@ public:
     std::uint64_t get_hash() const noexcept {
         return hash_;
     }
+    File get_king_file() const noexcept {
+        return king_file_;
+    }
+    File get_kingside_rook_file() const noexcept {
+        return kingside_rook_file_;
+    }
+    File get_queenside_rook_file() const noexcept {
+        return queenside_rook_file_;
+    }
 
     Bitboard get_occupancy() const noexcept {
         return color_bitboards_[0] | color_bitboards_[1];
@@ -96,36 +104,6 @@ public:
 
 private:
     static constexpr std::size_t BOARD_SIZE = 64;
-    static constexpr File KING_FILE = File::FILE_E;
-    static constexpr File KINGSIDE_ROOK_FILE = File::FILE_H;
-    static constexpr File QUEENSIDE_ROOK_FILE = File::FILE_A;
-    static constexpr std::array<CastlingRights, BOARD_SIZE>
-        CASTLING_RIGHTS_MASK = [] {
-            std::array<CastlingRights, BOARD_SIZE> mask;
-            mask.fill(CastlingRights::ALL);
-            const std::array<std::tuple<File, Rank, CastlingRights>, 6>
-                overrides{{
-                    {KING_FILE, Rank::RANK_1, CastlingRights::WHITE_ALL},
-                    {KINGSIDE_ROOK_FILE,
-                     Rank::RANK_1,
-                     CastlingRights::WHITE_KINGSIDE},
-                    {QUEENSIDE_ROOK_FILE,
-                     Rank::RANK_1,
-                     CastlingRights::WHITE_QUEENSIDE},
-                    {KING_FILE, Rank::RANK_8, CastlingRights::BLACK_ALL},
-                    {KINGSIDE_ROOK_FILE,
-                     Rank::RANK_8,
-                     CastlingRights::BLACK_KINGSIDE},
-                    {QUEENSIDE_ROOK_FILE,
-                     Rank::RANK_8,
-                     CastlingRights::BLACK_QUEENSIDE},
-                }};
-            for (const auto& [file, rank, rights_to_mask] : overrides) {
-                const auto square = get_square_from_file_rank(file, rank);
-                mask[static_cast<std::size_t>(square)] = ~rights_to_mask;
-            }
-            return mask;
-        }();
 
     Position() noexcept;
 
@@ -136,11 +114,20 @@ private:
     void add_castling_rights(CastlingRights rights_to_add) noexcept {
         castling_rights_ |= rights_to_add;
     }
+    void remove_castling_rights(CastlingRights rights_to_remove) noexcept {
+        castling_rights_ &= ~rights_to_remove;
+    }
     Bitboard& bitboard_of(Color color) noexcept {
         return color_bitboards_[static_cast<std::size_t>(color)];
     }
     Bitboard& bitboard_of(PieceType type) noexcept {
         return piece_type_bitboards_[static_cast<std::size_t>(type)];
+    }
+    CastlingRights get_castling_rights_mask(Square square) const noexcept {
+        return castling_rights_mask_[static_cast<std::size_t>(square)];
+    }
+    void set_castling_rights_mask(Square square, CastlingRights mask) noexcept {
+        castling_rights_mask_[static_cast<std::size_t>(square)] = mask;
     }
 
     bool is_well_formed_move(const Move& move) const noexcept;
@@ -193,6 +180,10 @@ private:
     std::uint64_t hash_;
     std::array<Bitboard, 2> color_bitboards_;
     std::array<Bitboard, 7> piece_type_bitboards_;
+    std::array<CastlingRights, BOARD_SIZE> castling_rights_mask_;
+    File king_file_;
+    File kingside_rook_file_;
+    File queenside_rook_file_;
 };
 
 }  // namespace wuttang::chess

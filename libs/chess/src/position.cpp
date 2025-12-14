@@ -26,7 +26,11 @@ Position::Position() noexcept :
         initial_fullmove_number_(1),
         hash_(0),
         color_bitboards_{},
-        piece_type_bitboards_{} {
+        piece_type_bitboards_{},
+        castling_rights_mask_{},
+        king_file_(File::FILE_INVALID),
+        kingside_rook_file_(File::FILE_INVALID),
+        queenside_rook_file_(File::FILE_INVALID) {
     board_.fill(Piece::NONE);
     history_.reserve(100);
 };
@@ -170,29 +174,80 @@ Position Position::from_fen(std::string_view fen_string) {
         }
     }
 
+    // Setup castling files & mask
+    position.king_file_ = File::FILE_E;
+    position.kingside_rook_file_ = File::FILE_H;
+    position.queenside_rook_file_ = File::FILE_A;
+
+    position.castling_rights_mask_.fill(CastlingRights::ALL);
+    const std::array<std::tuple<File, Rank, CastlingRights>, 6> overrides{{
+        {position.get_king_file(), Rank::RANK_1, CastlingRights::WHITE_ALL},
+        {position.get_kingside_rook_file(),
+         Rank::RANK_1,
+         CastlingRights::WHITE_KINGSIDE},
+        {position.get_queenside_rook_file(),
+         Rank::RANK_1,
+         CastlingRights::WHITE_QUEENSIDE},
+        {position.get_king_file(), Rank::RANK_8, CastlingRights::BLACK_ALL},
+        {position.get_kingside_rook_file(),
+         Rank::RANK_8,
+         CastlingRights::BLACK_KINGSIDE},
+        {position.get_queenside_rook_file(),
+         Rank::RANK_8,
+         CastlingRights::BLACK_QUEENSIDE},
+    }};
+    for (const auto& [file, rank, rights_to_mask] : overrides) {
+        const auto square = get_square_from_file_rank(file, rank);
+        position.set_castling_rights_mask(square, ~rights_to_mask);
+    }
+
     // Sanitize castling rights
     if (position.has_castling_right(CastlingRights::WHITE_KINGSIDE)) {
-        if (position.get_piece_at(Square::E1) != Piece::WHITE_KING ||
-            position.get_piece_at(Square::H1) != Piece::WHITE_ROOK) {
-            position.castling_rights_ &= ~CastlingRights::WHITE_KINGSIDE;
+        Square k =
+            get_square_from_file_rank(position.get_king_file(), Rank::RANK_1);
+        Square r = get_square_from_file_rank(
+            position.get_kingside_rook_file(),
+            Rank::RANK_1
+        );
+        if (position.get_piece_at(k) != Piece::WHITE_KING ||
+            position.get_piece_at(r) != Piece::WHITE_ROOK) {
+            position.remove_castling_rights(CastlingRights::WHITE_KINGSIDE);
         }
     }
     if (position.has_castling_right(CastlingRights::WHITE_QUEENSIDE)) {
-        if (position.get_piece_at(Square::E1) != Piece::WHITE_KING ||
-            position.get_piece_at(Square::A1) != Piece::WHITE_ROOK) {
-            position.castling_rights_ &= ~CastlingRights::WHITE_QUEENSIDE;
+        Square k =
+            get_square_from_file_rank(position.get_king_file(), Rank::RANK_1);
+        Square r = get_square_from_file_rank(
+            position.get_queenside_rook_file(),
+            Rank::RANK_1
+        );
+        if (position.get_piece_at(k) != Piece::WHITE_KING ||
+            position.get_piece_at(r) != Piece::WHITE_ROOK) {
+            position.remove_castling_rights(CastlingRights::WHITE_QUEENSIDE);
         }
     }
     if (position.has_castling_right(CastlingRights::BLACK_KINGSIDE)) {
-        if (position.get_piece_at(Square::E8) != Piece::BLACK_KING ||
-            position.get_piece_at(Square::H8) != Piece::BLACK_ROOK) {
-            position.castling_rights_ &= ~CastlingRights::BLACK_KINGSIDE;
+        Square k =
+            get_square_from_file_rank(position.get_king_file(), Rank::RANK_8);
+        Square r = get_square_from_file_rank(
+            position.get_kingside_rook_file(),
+            Rank::RANK_8
+        );
+        if (position.get_piece_at(k) != Piece::BLACK_KING ||
+            position.get_piece_at(r) != Piece::BLACK_ROOK) {
+            position.remove_castling_rights(CastlingRights::BLACK_KINGSIDE);
         }
     }
     if (position.has_castling_right(CastlingRights::BLACK_QUEENSIDE)) {
-        if (position.get_piece_at(Square::E8) != Piece::BLACK_KING ||
-            position.get_piece_at(Square::A8) != Piece::BLACK_ROOK) {
-            position.castling_rights_ &= ~CastlingRights::BLACK_QUEENSIDE;
+        Square k =
+            get_square_from_file_rank(position.get_king_file(), Rank::RANK_8);
+        Square r = get_square_from_file_rank(
+            position.get_queenside_rook_file(),
+            Rank::RANK_8
+        );
+        if (position.get_piece_at(k) != Piece::BLACK_KING ||
+            position.get_piece_at(r) != Piece::BLACK_ROOK) {
+            position.remove_castling_rights(CastlingRights::BLACK_QUEENSIDE);
         }
     }
 
@@ -392,12 +447,8 @@ void Position::make_well_formed_move(const Move& move) noexcept {
     }
 
     if (move.get_type() != MoveType::NULL_MOVE) {
-        castling_rights_ &= CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
-                                move.get_from_square()
-                            )] &
-                            CASTLING_RIGHTS_MASK[static_cast<std::size_t>(
-                                move.get_to_square()
-                            )];
+        castling_rights_ &= get_castling_rights_mask(move.get_from_square()) &
+                            get_castling_rights_mask(move.get_to_square());
     }
 
     if (en_passant_square_ != Square::NO_SQ) {
@@ -554,7 +605,7 @@ void Position::make_castle_kingside_move(const Move& move) noexcept {
     move_piece(move.get_from_square(), move.get_to_square());
     move_piece(
         get_square_from_file_rank(
-            KINGSIDE_ROOK_FILE,
+            get_kingside_rook_file(),
             side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
         ),
         get_square_from_file_rank(
@@ -573,7 +624,7 @@ void Position::undo_castle_kingside_move(const Move& move) noexcept {
             side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
         ),
         get_square_from_file_rank(
-            KINGSIDE_ROOK_FILE,
+            get_kingside_rook_file(),
             side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
         )
     );
@@ -584,7 +635,7 @@ void Position::make_castle_queenside_move(const Move& move) noexcept {
     move_piece(move.get_from_square(), move.get_to_square());
     move_piece(
         get_square_from_file_rank(
-            QUEENSIDE_ROOK_FILE,
+            get_queenside_rook_file(),
             side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
         ),
         get_square_from_file_rank(
@@ -603,7 +654,7 @@ void Position::undo_castle_queenside_move(const Move& move) noexcept {
             side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
         ),
         get_square_from_file_rank(
-            QUEENSIDE_ROOK_FILE,
+            get_queenside_rook_file(),
             side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
         )
     );
