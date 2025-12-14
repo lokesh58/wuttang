@@ -1,9 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <wuttang/chess/attacks.hpp>
 #include <wuttang/chess/bitboard.hpp>
+#include <wuttang/chess/castling_rights.hpp>
 #include <wuttang/chess/color.hpp>
 #include <wuttang/chess/move.hpp>
 #include <wuttang/chess/move_list.hpp>
@@ -334,46 +336,83 @@ private:
         Color us,
         MoveList& moves
     ) noexcept {
-        Square king_sq = us == Color::WHITE ? Square::E1 : Square::E8;
-        // Verify king is at the right square (e.g. Chess960 might be different but we assume standard based on castling logic in Position)
-        if (pos.get_piece_at(king_sq) !=
-            get_piece_from_color_type(us, PieceType::KING))
+        const bool has_kingside = pos.has_kingside_castling_rights(us);
+        const bool has_queenside = pos.has_queenside_castling_rights(us);
+        if (!has_kingside && !has_queenside) {
             return;
+        }
+        const Rank rank = us == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        const Square king_sq =
+            get_square_from_file_rank(pos.get_king_file(), rank);
 
         // Cannot castle out of check
         if (pos.is_square_attacked(king_sq, invert(us)))
             return;
 
-        // Kingside
-        if (pos.has_kingside_castling_rights(us)) {
-            Square f_sq = us == Color::WHITE ? Square::F1 : Square::F8;
-            Square g_sq = us == Color::WHITE ? Square::G1 : Square::G8;
+        auto check_castling = [&](File rook_file,
+                                  File target_king_file,
+                                  File target_rook_file,
+                                  auto move_factory) {
+            const int k_f = static_cast<int>(pos.get_king_file());
+            const int r_f = static_cast<int>(rook_file);
+            const int tk_f = static_cast<int>(target_king_file);
+            const int tr_f = static_cast<int>(target_rook_file);
 
-            // Path must be empty
-            if (pos.get_piece_at(f_sq) == Piece::NONE &&
-                pos.get_piece_at(g_sq) == Piece::NONE &&
-                // Path must not be attacked
-                !pos.is_square_attacked(f_sq, invert(us)) &&
-                !pos.is_square_attacked(g_sq, invert(us))) {
-                moves.push_back(Move::castle_kingside(king_sq, g_sq));
+            // 1. Check Path Emptiness
+            // All squares between min and max of (K, R, TargetK, TargetR) must
+            // be empty EXCEPT for the King's start square and Rook's start
+            // square.
+            const int min_f = std::min({k_f, r_f, tk_f, tr_f});
+            const int max_f = std::max({k_f, r_f, tk_f, tr_f});
+
+            for (int f = min_f; f <= max_f; ++f) {
+                if (f == k_f || f == r_f)
+                    continue;
+                if (pos.get_piece_at(
+                        get_square_from_file_rank(static_cast<File>(f), rank)
+                    ) != Piece::NONE)
+                    return;
             }
+
+            // 2. Check King Safety on Path
+            // King must not pass through check or end up in check.
+            // Start square is already checked.
+            const int dir = (tk_f > k_f) ? 1 : -1;
+            if (k_f != tk_f) {
+                for (int f = k_f + dir;; f += dir) {
+                    Square sq =
+                        get_square_from_file_rank(static_cast<File>(f), rank);
+                    if (pos.is_square_attacked(sq, invert(us)))
+                        return;
+                    if (f == tk_f)
+                        break;
+                }
+            }
+
+            moves.push_back(move_factory(
+                king_sq,
+                get_square_from_file_rank(target_king_file, rank)
+            ));
+        };
+
+        // Kingside
+        if (has_kingside) {
+            check_castling(
+                pos.get_kingside_rook_file(),
+                File::FILE_G,
+                File::FILE_F,
+                Move::castle_kingside
+            );
         }
 
         // Queenside
-        if (pos.has_queenside_castling_rights(us)) {
-            Square d_sq = us == Color::WHITE ? Square::D1 : Square::D8;
-            Square c_sq = us == Color::WHITE ? Square::C1 : Square::C8;
-            Square b_sq = us == Color::WHITE ? Square::B1 : Square::B8;
-
-            // Path must be empty (B, C, D)
-            if (pos.get_piece_at(d_sq) == Piece::NONE &&
-                pos.get_piece_at(c_sq) == Piece::NONE &&
-                pos.get_piece_at(b_sq) == Piece::NONE &&
-                // Path must not be attacked (D, C) - B doesn't matter for check
-                !pos.is_square_attacked(d_sq, invert(us)) &&
-                !pos.is_square_attacked(c_sq, invert(us))) {
-                moves.push_back(Move::castle_queenside(king_sq, c_sq));
-            }
+        if (has_queenside) {
+            check_castling(
+                pos.get_queenside_rook_file(),
+                File::FILE_C,
+                File::FILE_D,
+                Move::castle_queenside
+            );
         }
     }
 };
