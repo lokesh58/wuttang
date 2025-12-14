@@ -32,6 +32,14 @@ TEST(BitboardTest, FromFile) {
     }
 }
 
+TEST(BitboardTest, FromRank) {
+    constexpr Bitboard bb = Bitboard::from_rank(Rank::RANK_3);
+    EXPECT_EQ(bb.pop_count(), 8);
+    for (auto sq : bb) {
+        EXPECT_EQ(get_square_rank(sq), Rank::RANK_3);
+    }
+}
+
 TEST(BitboardTest, SetGetClearToggle) {
     Bitboard bb;
 

@@ -22,6 +22,10 @@ public:
         return Bitboard(0x0101010101010101ULL << static_cast<std::uint8_t>(f));
     }
 
+    static constexpr Bitboard from_rank(Rank r) noexcept {
+        return Bitboard(0xFFULL << (static_cast<int>(r) * 8));
+    }
+
     // --- Bit Manipulation ---
     constexpr bool get(Square sq) const noexcept {
         return (bits_ & (1ULL << static_cast<std::uint8_t>(sq))) != 0;
