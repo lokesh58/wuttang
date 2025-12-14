@@ -281,6 +281,70 @@ TEST_F(PositionFenTest, ThrowsOnInvalidFEN) {
         Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 0 10532"),
         std::invalid_argument
     ) << "Invalid fullmove number (too high).";
+
+    EXPECT_THROW(
+        Position::from_fen("8/8/8/8/8/8/8/8 w - - 0 1"),
+        std::invalid_argument
+    ) << "Missing kings.";
+
+    EXPECT_THROW(
+        Position::from_fen("4k3/8/8/8/8/8/8/8 w - - 0 1"),
+        std::invalid_argument
+    ) << "Missing white king.";
+
+    EXPECT_THROW(
+        Position::from_fen("4K3/4K3/8/8/8/8/4k3/8 w - - 0 1"),
+        std::invalid_argument
+    ) << "Too many white kings.";
+
+    EXPECT_THROW(
+        Position::from_fen("P7/8/8/8/8/8/8/4k2K w - - 0 1"),
+        std::invalid_argument
+    ) << "Pawn on rank 8.";
+
+    EXPECT_THROW(
+        Position::from_fen("4k2K/8/8/8/8/8/8/p7 w - - 0 1"),
+        std::invalid_argument
+    ) << "Pawn on rank 1.";
+
+    EXPECT_THROW(
+        Position::from_fen("8/8/8/8/8/8/4k3/4K3 w - - 0 1"),
+        std::invalid_argument
+    ) << "Opponent king in check (kings touching).";
+
+    EXPECT_THROW(
+        Position::from_fen("4k3/8/8/8/8/8/8/4R1K1 w - - 0 1"),
+        std::invalid_argument
+    ) << "Opponent king in check by rook.";
+}
+
+TEST_F(PositionFenTest, SanitizesCastlingRights) {
+    // 1. Missing White Kingside Rook
+    // FEN: r3k2r/8/8/8/8/8/8/R3K3 w KQkq - 0 1 (Kings present, H1 rook missing)
+    {
+        const auto pos =
+            Position::from_fen("r3k2r/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
+        EXPECT_FALSE(pos.has_kingside_castling_rights(Color::WHITE));
+        EXPECT_TRUE(pos.has_queenside_castling_rights(Color::WHITE));
+    }
+
+    // 2. Missing Black Queenside Rook
+    // FEN: 4k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1 (Kings present, A8 rook missing)
+    {
+        const auto pos =
+            Position::from_fen("4k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+        EXPECT_TRUE(pos.has_kingside_castling_rights(Color::BLACK));
+        EXPECT_FALSE(pos.has_queenside_castling_rights(Color::BLACK));
+    }
+
+    // 3. King on wrong square (e.g., d1)
+    // FEN: r3k2r/8/8/8/8/8/8/R2K3R w KQkq - 0 1
+    {
+        const auto pos =
+            Position::from_fen("r3k2r/8/8/8/8/8/8/R2K3R w KQkq - 0 1");
+        EXPECT_FALSE(pos.has_kingside_castling_rights(Color::WHITE));
+        EXPECT_FALSE(pos.has_queenside_castling_rights(Color::WHITE));
+    }
 }
 
 class PositionMoveTest : public PositionTestBase {
@@ -532,8 +596,8 @@ TEST(PositionTest, IsSquareAttacked) {
     // Black Knight at C3 (Attacks E2, A2, B1, D1).
     // White Pawn at E2.
     //
-    // FEN: 8/8/8/8/8/2n5/4P3/r3K3 w - - 0 1
-    auto pos = Position::from_fen("8/8/8/8/8/2n5/4P3/r3K3 w - - 0 1");
+    // FEN: 7k/8/8/8/8/2n5/4P3/r3K3 w - - 0 1
+    auto pos = Position::from_fen("7k/8/8/8/8/2n5/4P3/r3K3 w - - 0 1");
 
     // E1 is attacked by Rook at A1 (Rank 1 is clear between A1 and E1)
     EXPECT_TRUE(pos.is_square_attacked(Square::E1, Color::BLACK));
@@ -556,9 +620,10 @@ TEST(PositionTest, IsSquareAttacked) {
 
     // Blocked ray test
     // Place a blocker at C1.
-    // FEN: 8/8/8/8/8/2n5/4P3/r1B1K3 w - - 0 1
+    // FEN: 7k/8/8/8/8/2n5/4P3/r1B1K3 w - - 0 1
     // White Bishop at C1 blocks A1-E1.
-    auto pos_blocked = Position::from_fen("8/8/8/8/8/2n5/4P3/r1B1K3 w - - 0 1");
+    auto pos_blocked =
+        Position::from_fen("7k/8/8/8/8/2n5/4P3/r1B1K3 w - - 0 1");
 
     // E1 should NOT be attacked by Rook (blocked by C1)
     // But check other attackers... Knight at C3 attacks E2, not E1.

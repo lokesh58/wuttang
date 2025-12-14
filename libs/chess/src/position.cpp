@@ -64,6 +64,8 @@ bool Position::is_valid_fen(std::string_view fen_string) noexcept {
     std::string_view piece_placement = extract_part(' ');
     std::uint8_t rank_count = 0;
     std::uint8_t file_count = 0;
+    std::uint8_t white_kings = 0;
+    std::uint8_t black_kings = 0;
     for (char c : piece_placement) {
         if (c == '/') {
             if (file_count != 8)
@@ -76,6 +78,16 @@ bool Position::is_valid_fen(std::string_view fen_string) noexcept {
             if (std::string_view("prnbqkPRNBQK").find(c) ==
                 std::string_view::npos)
                 return false;
+
+            if (c == 'K') {
+                white_kings++;
+            } else if (c == 'k') {
+                black_kings++;
+            } else if (c == 'P' || c == 'p') {
+                if (rank_count == 0 || rank_count == 7) {
+                    return false;
+                }
+            }
             ++file_count;
         } else {
             return false;  // Invalid character
@@ -83,6 +95,8 @@ bool Position::is_valid_fen(std::string_view fen_string) noexcept {
     }
     if (rank_count != 7 || file_count != 8)
         return false;  // Must have 8 ranks total
+    if (white_kings != 1 || black_kings != 1)
+        return false;
 
     // 2. Validate active color
     std::string_view active_color = extract_part(' ');
@@ -133,7 +147,7 @@ bool Position::is_valid_fen(std::string_view fen_string) noexcept {
     return true;
 }
 
-Position Position::from_valid_fen(std::string_view fen_string) noexcept {
+Position Position::from_valid_fen(std::string_view fen_string) {
     Position position;
     auto it = fen_string.begin();
     auto end = fen_string.end();
@@ -198,6 +212,34 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
                 break;
         }
     }
+
+    // Sanitize castling rights
+    // If the king or the corresponding rook is not on its starting square, remove the right.
+    if (position.has_castling_right(CastlingRights::WHITE_KINGSIDE)) {
+        if (position.get_piece_at(Square::E1) != Piece::WHITE_KING ||
+            position.get_piece_at(Square::H1) != Piece::WHITE_ROOK) {
+            position.castling_rights_ &= ~CastlingRights::WHITE_KINGSIDE;
+        }
+    }
+    if (position.has_castling_right(CastlingRights::WHITE_QUEENSIDE)) {
+        if (position.get_piece_at(Square::E1) != Piece::WHITE_KING ||
+            position.get_piece_at(Square::A1) != Piece::WHITE_ROOK) {
+            position.castling_rights_ &= ~CastlingRights::WHITE_QUEENSIDE;
+        }
+    }
+    if (position.has_castling_right(CastlingRights::BLACK_KINGSIDE)) {
+        if (position.get_piece_at(Square::E8) != Piece::BLACK_KING ||
+            position.get_piece_at(Square::H8) != Piece::BLACK_ROOK) {
+            position.castling_rights_ &= ~CastlingRights::BLACK_KINGSIDE;
+        }
+    }
+    if (position.has_castling_right(CastlingRights::BLACK_QUEENSIDE)) {
+        if (position.get_piece_at(Square::E8) != Piece::BLACK_KING ||
+            position.get_piece_at(Square::A8) != Piece::BLACK_ROOK) {
+            position.castling_rights_ &= ~CastlingRights::BLACK_QUEENSIDE;
+        }
+    }
+
     position.hash_ ^=
         ZobristHash::get_castling_rights_key(position.castling_rights_);
 
@@ -228,6 +270,19 @@ Position Position::from_valid_fen(std::string_view fen_string) noexcept {
         fullmove_number.data() + fullmove_number.size(),
         position.initial_fullmove_number_
     );
+
+    // Check if the side NOT to move is in check (illegal position)
+    const Color opponent = invert(position.side_to_move_);
+    const Bitboard opponent_king_bb =
+        position.get_bitboard(opponent, PieceType::KING);
+    // We already validated there is exactly 1 king, so this is safe.
+    const Square opponent_king_sq = opponent_king_bb.lsb_square();
+
+    if (position.is_square_attacked(opponent_king_sq, position.side_to_move_)) {
+        throw std::invalid_argument(
+            "Illegal FEN: Opponent king is currently in check."
+        );
+    }
 
     return position;
 }

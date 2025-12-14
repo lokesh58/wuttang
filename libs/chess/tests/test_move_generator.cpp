@@ -68,7 +68,7 @@ TEST(MoveGenerator, CastlingBlocked) {
 
 TEST(MoveGenerator, PinnedPiece) {
     // White king at e1, White pawn at d2, Black Bishop a5.
-    auto pos_pin = Position::from_fen("8/8/8/b7/8/8/3P4/4K3 w - - 0 1");
+    auto pos_pin = Position::from_fen("8/8/8/b6k/8/8/3P4/4K3 w - - 0 1");
     // d2 pawn cannot push (d2-d3) or double push (d2-d4) because it would expose K to B.
     MoveList pinned_moves;
     MoveGenerator::generate<MoveGenType::LEGAL>(pos_pin, pinned_moves);
@@ -92,7 +92,7 @@ TEST(MoveGenerator, IsLegalMove) {
     // Unsafe move: Moving king into check
     // Setup: White King e1, Black Rook e8.
     // e1-e2 is valid geometry (King step), but unsafe due to rook
-    auto pos_check = Position::from_fen("4r3/8/8/8/8/8/8/4K3 w - - 0 1");
+    auto pos_check = Position::from_fen("4r2k/8/8/8/8/8/8/4K3 w - - 0 1");
     Move k_e2 = Move::quiet(Square::E1, Square::E2);
     EXPECT_FALSE(MoveGenerator::is_legal_move(pos_check, k_e2));
 
@@ -100,7 +100,7 @@ TEST(MoveGenerator, IsLegalMove) {
     // Setup: White King e1, White Bishop e2, Black Rook e8.
     // Bishop e2 is pinned.
     // Be2-d3 (diagonal) is pseudo-legal but exposes King to Rook
-    auto pos_pin = Position::from_fen("4r3/8/8/8/8/8/4B3/4K3 w - - 0 1");
+    auto pos_pin = Position::from_fen("4r2k/8/8/8/8/8/4B3/4K3 w - - 0 1");
     Move b_d3 = Move::quiet(Square::E2, Square::D3);
     EXPECT_FALSE(MoveGenerator::is_legal_move(pos_pin, b_d3));
 
@@ -108,7 +108,7 @@ TEST(MoveGenerator, IsLegalMove) {
     // Setup: White King e1, Black Rook e8. White Bishop c1.
     // e1 is in check.
     // Be3 blocks.
-    auto pos_block = Position::from_fen("4r3/8/8/8/8/8/8/2B1K3 w - - 0 1");
+    auto pos_block = Position::from_fen("4r2k/8/8/8/8/8/8/2B1K3 w - - 0 1");
     Move b_e3 = Move::quiet(Square::C1, Square::E3);
     EXPECT_TRUE(MoveGenerator::is_legal_move(pos_block, b_e3));
 }
