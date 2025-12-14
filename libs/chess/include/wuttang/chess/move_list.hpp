@@ -25,7 +25,7 @@ public:
 
     void pop_back() noexcept {
         assert(count_ > 0);
-        count_--;
+        --count_;
     }
 
     // Standard container accessors

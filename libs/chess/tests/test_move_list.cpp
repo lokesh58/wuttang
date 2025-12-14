@@ -42,7 +42,7 @@ TEST(MoveListTest, Iterators) {
     int count = 0;
     for (const auto& move : move_list) {
         (void) move;
-        count++;
+        ++count;
     }
     EXPECT_EQ(count, 2);
 }

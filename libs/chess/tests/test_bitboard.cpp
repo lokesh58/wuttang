@@ -180,7 +180,7 @@ TEST(BitboardTest, Iterator) {
     std::vector<Square> squares;
     for (Square sq : bb) {
         squares.push_back(sq);
-        count++;
+        ++count;
     }
 
     EXPECT_EQ(count, 3);
@@ -196,7 +196,7 @@ TEST(BitboardTest, ConstIterator) {
 
     int count = 0;
     for (auto it = bb.begin(); it != bb.end(); ++it) {
-        count++;
+        ++count;
     }
     EXPECT_EQ(count, 2);
 }

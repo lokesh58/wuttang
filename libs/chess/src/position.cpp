@@ -31,128 +31,15 @@ Position::Position() noexcept :
     history_.reserve(100);
 };
 
-Position Position::standard() noexcept {
-    return from_valid_fen(STANDARD_STARTING_FEN);
+Position Position::standard() {
+    return from_fen(STANDARD_STARTING_FEN);
 }
 
 Position Position::from_fen(std::string_view fen_string) {
-    if (!is_valid_fen(fen_string)) {
-        throw std::invalid_argument("Invalid FEN string");
-    }
-    return from_valid_fen(fen_string);
-}
-
-bool Position::is_valid_fen(std::string_view fen_string) noexcept {
-    // Split the FEN string into parts using space as a delimiter
-    auto it = fen_string.begin();
-    auto end = fen_string.end();
-
-    // Helper lambda to extract and validate a part until a delimiter
-    auto extract_part = [&](char delimiter) {
-        auto start = it;
-        while (it != end && *it != delimiter) {
-            ++it;
-        }
-        std::string_view part(&*start, std::distance(start, it));
-        if (it != end && *it == delimiter) {
-            ++it;
-        }
-        return part;
-    };
-
-    // 1. Validate piece placement
-    std::string_view piece_placement = extract_part(' ');
-    std::uint8_t rank_count = 0;
-    std::uint8_t file_count = 0;
-    std::uint8_t white_kings = 0;
-    std::uint8_t black_kings = 0;
-    for (char c : piece_placement) {
-        if (c == '/') {
-            if (file_count != 8)
-                return false;  // Each rank must have exactly 8 squares
-            ++rank_count;
-            file_count = 0;
-        } else if (std::isdigit(c)) {
-            file_count += c - '0';
-        } else if (std::isalpha(c)) {
-            if (std::string_view("prnbqkPRNBQK").find(c) ==
-                std::string_view::npos)
-                return false;
-
-            if (c == 'K') {
-                white_kings++;
-            } else if (c == 'k') {
-                black_kings++;
-            } else if (c == 'P' || c == 'p') {
-                if (rank_count == 0 || rank_count == 7) {
-                    return false;
-                }
-            }
-            ++file_count;
-        } else {
-            return false;  // Invalid character
-        }
-    }
-    if (rank_count != 7 || file_count != 8)
-        return false;  // Must have 8 ranks total
-    if (white_kings != 1 || black_kings != 1)
-        return false;
-
-    // 2. Validate active color
-    std::string_view active_color = extract_part(' ');
-    if (active_color != "w" && active_color != "b")
-        return false;
-
-    // 3. Validate castling availability
-    std::string_view castling_availability = extract_part(' ');
-    if (castling_availability != "-" &&
-        castling_availability.find_first_not_of("KQkq") !=
-            std::string_view::npos)
-        return false;
-
-    // 4. Validate en passant target square
-    std::string_view en_passant = extract_part(' ');
-    if (en_passant != "-" &&
-        (en_passant.size() != 2 || en_passant[0] < 'a' || en_passant[0] > 'h' ||
-         en_passant[1] < '1' || en_passant[1] > '8'))
-        return false;
-
-    // 5. Validate halfmove clock
-    std::string_view halfmove_clock_sv = extract_part(' ');
-    int halfmove_clock;
-    auto halfmove_clock_result = std::from_chars(
-        halfmove_clock_sv.data(),
-        halfmove_clock_sv.data() + halfmove_clock_sv.size(),
-        halfmove_clock
-    );
-    if (halfmove_clock_result.ec != std::errc() ||
-        halfmove_clock_result.ptr !=
-            halfmove_clock_sv.data() + halfmove_clock_sv.size() ||
-        halfmove_clock < 0 || halfmove_clock > 150)
-        return false;
-
-    // 6. Validate fullmove number
-    std::string_view fullmove_number_sv = extract_part(' ');
-    int fullmove_number;
-    auto fullmove_number_result = std::from_chars(
-        fullmove_number_sv.data(),
-        fullmove_number_sv.data() + fullmove_number_sv.size(),
-        fullmove_number
-    );
-    if (fullmove_number_result.ec != std::errc() ||
-        fullmove_number_result.ptr !=
-            fullmove_number_sv.data() + fullmove_number_sv.size() ||
-        fullmove_number < 1 || fullmove_number > 9999)
-        return false;
-    return true;
-}
-
-Position Position::from_valid_fen(std::string_view fen_string) {
     Position position;
     auto it = fen_string.begin();
     auto end = fen_string.end();
 
-    // Helper lambda to extract and validate a part until a delimiter
     auto extract_part = [&](char delimiter) {
         auto start = it;
         while (it != end && *it != delimiter) {
@@ -169,52 +56,121 @@ Position Position::from_valid_fen(std::string_view fen_string) {
     std::string_view piece_placement = extract_part(' ');
     Rank placement_rank = Rank::RANK_8;
     File placement_file = File::FILE_A;
+    std::uint8_t rank_count = 0;
+    std::uint8_t file_count = 0;
+    std::uint8_t white_kings = 0;
+    std::uint8_t black_kings = 0;
+
     for (char c : piece_placement) {
         if (c == '/') {
+            if (file_count != 8) {
+                throw std::invalid_argument(
+                    "Invalid FEN: Rank does not have 8 squares."
+                );
+            }
             placement_rank = shift(placement_rank, -1);
             placement_file = File::FILE_A;
+            file_count = 0;
+            ++rank_count;
         } else if (std::isdigit(c)) {
             std::int8_t empty_squares = c - '0';
+            file_count += empty_squares;
+            if (file_count > 8) {
+                throw std::invalid_argument(
+                    "Invalid FEN: Rank exceeds 8 squares."
+                );
+            }
             placement_file = shift(placement_file, empty_squares);
-        } else {
+        } else if (std::string_view("prnbqkPRNBQK").find(c) !=
+                   std::string_view::npos) {
+            if (file_count >= 8) {
+                throw std::invalid_argument(
+                    "Invalid FEN: Rank exceeds 8 squares."
+                );
+            }
             const auto piece = get_piece_from_char(c);
+
+            if (piece == Piece::WHITE_KING)
+                ++white_kings;
+            else if (piece == Piece::BLACK_KING)
+                ++black_kings;
+            else if (get_piece_type(piece) == PieceType::PAWN) {
+                if (placement_rank == Rank::RANK_1 ||
+                    placement_rank == Rank::RANK_8) {
+                    throw std::invalid_argument(
+                        "Invalid FEN: Pawn on rank 1 or 8."
+                    );
+                }
+            }
+
             const auto square =
                 get_square_from_file_rank(placement_file, placement_rank);
             position.add_piece(square, piece);
             placement_file = shift(placement_file, 1);
+            ++file_count;
+        } else {
+            throw std::invalid_argument(
+                "Invalid FEN: Invalid character in piece placement."
+            );
         }
+    }
+
+    if (rank_count != 7 || file_count != 8) {
+        throw std::invalid_argument(
+            "Invalid FEN: Board must have 8 ranks of 8 squares."
+        );
+    }
+    if (white_kings != 1 || black_kings != 1) {
+        throw std::invalid_argument(
+            "Invalid FEN: Must have exactly one king per side."
+        );
     }
 
     // 2. Active color
     std::string_view active_color = extract_part(' ');
     if (active_color == "w") {
         position.side_to_move_ = Color::WHITE;
-    } else {
+    } else if (active_color == "b") {
         position.side_to_move_ = Color::BLACK;
         position.hash_ ^= ZobristHash::get_side_to_move_key();
+    } else {
+        throw std::invalid_argument("Invalid FEN: Invalid active color.");
     }
 
     // 3. Castling availability
     std::string_view castling_availability = extract_part(' ');
-    for (char c : castling_availability) {
-        switch (c) {
-            case 'K':
-                position.add_castling_rights(CastlingRights::WHITE_KINGSIDE);
-                break;
-            case 'Q':
-                position.add_castling_rights(CastlingRights::WHITE_QUEENSIDE);
-                break;
-            case 'k':
-                position.add_castling_rights(CastlingRights::BLACK_KINGSIDE);
-                break;
-            case 'q':
-                position.add_castling_rights(CastlingRights::BLACK_QUEENSIDE);
-                break;
+    if (castling_availability != "-") {
+        for (char c : castling_availability) {
+            switch (c) {
+                case 'K':
+                    position.add_castling_rights(
+                        CastlingRights::WHITE_KINGSIDE
+                    );
+                    break;
+                case 'Q':
+                    position.add_castling_rights(
+                        CastlingRights::WHITE_QUEENSIDE
+                    );
+                    break;
+                case 'k':
+                    position.add_castling_rights(
+                        CastlingRights::BLACK_KINGSIDE
+                    );
+                    break;
+                case 'q':
+                    position.add_castling_rights(
+                        CastlingRights::BLACK_QUEENSIDE
+                    );
+                    break;
+                default:
+                    throw std::invalid_argument(
+                        "Invalid FEN: Invalid castling rights character."
+                    );
+            }
         }
     }
 
     // Sanitize castling rights
-    // If the king or the corresponding rook is not on its starting square, remove the right.
     if (position.has_castling_right(CastlingRights::WHITE_KINGSIDE)) {
         if (position.get_piece_at(Square::E1) != Piece::WHITE_KING ||
             position.get_piece_at(Square::H1) != Piece::WHITE_ROOK) {
@@ -246,6 +202,12 @@ Position Position::from_valid_fen(std::string_view fen_string) {
     // 4. En passant target square
     std::string_view en_passant = extract_part(' ');
     if (en_passant != "-") {
+        if (en_passant.size() != 2 || en_passant[0] < 'a' ||
+            en_passant[0] > 'h' || en_passant[1] < '1' || en_passant[1] > '8') {
+            throw std::invalid_argument(
+                "Invalid FEN: Invalid en passant square."
+            );
+        }
         const auto file = static_cast<File>(en_passant[0] - 'a');
         const auto rank = static_cast<Rank>(en_passant[1] - '1');
         const auto ep_square = get_square_from_file_rank(file, rank);
@@ -256,26 +218,42 @@ Position Position::from_valid_fen(std::string_view fen_string) {
     }
 
     // 5. Halfmove clock
-    std::string_view halfmove_clock = extract_part(' ');
-    std::from_chars(
-        halfmove_clock.data(),
-        halfmove_clock.data() + halfmove_clock.size(),
-        position.halfmove_clock_
+    std::string_view halfmove_clock_sv = extract_part(' ');
+    int halfmove_clock;
+    auto halfmove_clock_result = std::from_chars(
+        halfmove_clock_sv.data(),
+        halfmove_clock_sv.data() + halfmove_clock_sv.size(),
+        halfmove_clock
     );
+    if (halfmove_clock_result.ec != std::errc() ||
+        halfmove_clock_result.ptr !=
+            halfmove_clock_sv.data() + halfmove_clock_sv.size() ||
+        halfmove_clock < 0 || halfmove_clock > 150) {
+        throw std::invalid_argument("Invalid FEN: Invalid halfmove clock.");
+    }
+    position.halfmove_clock_ = static_cast<std::uint8_t>(halfmove_clock);
 
     // 6. Fullmove number
-    std::string_view fullmove_number = extract_part(' ');
-    std::from_chars(
-        fullmove_number.data(),
-        fullmove_number.data() + fullmove_number.size(),
-        position.initial_fullmove_number_
+    std::string_view fullmove_number_sv = extract_part(' ');
+    int fullmove_number;
+    auto fullmove_number_result = std::from_chars(
+        fullmove_number_sv.data(),
+        fullmove_number_sv.data() + fullmove_number_sv.size(),
+        fullmove_number
     );
+    if (fullmove_number_result.ec != std::errc() ||
+        fullmove_number_result.ptr !=
+            fullmove_number_sv.data() + fullmove_number_sv.size() ||
+        fullmove_number < 1 || fullmove_number > 9999) {
+        throw std::invalid_argument("Invalid FEN: Invalid fullmove number.");
+    }
+    position.initial_fullmove_number_ =
+        static_cast<std::uint16_t>(fullmove_number);
 
     // Check if the side NOT to move is in check (illegal position)
     const Color opponent = invert(position.side_to_move_);
     const Bitboard opponent_king_bb =
         position.get_bitboard(opponent, PieceType::KING);
-    // We already validated there is exactly 1 king, so this is safe.
     const Square opponent_king_sq = opponent_king_bb.lsb_square();
 
     if (position.is_square_attacked(opponent_king_sq, position.side_to_move_)) {
@@ -304,7 +282,7 @@ std::string Position::get_fen() const noexcept {
                 }
                 fen += get_piece_char(piece);
             } else {
-                empty_squares++;
+                ++empty_squares;
             }
         }
         if (empty_squares > 0) {

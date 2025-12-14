@@ -44,7 +44,7 @@ public:
             std::size_t i = start_index;
             while (i < moves.size()) {
                 if (is_legal_move(position, moves[i])) {
-                    i++;
+                    ++i;
                 } else {
                     // Swap with the last element and pop back
                     if (i != moves.size() - 1) {

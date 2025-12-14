@@ -110,6 +110,23 @@ protected:
 
         verify_bitboards(pos);
     }
+
+    void verify_invalid_fen(
+        std::string_view fen,
+        std::string_view expected_msg
+    ) {
+        try {
+            Position::from_fen(fen);
+            FAIL() << "Expected std::invalid_argument for FEN: " << fen;
+        } catch (const std::invalid_argument& e) {
+            EXPECT_EQ(std::string(e.what()), expected_msg)
+                << "Incorrect error message for FEN: " << fen;
+        } catch (...) {
+            FAIL()
+                << "Expected std::invalid_argument, got unknown exception for FEN: "
+                << fen;
+        }
+    }
 };
 
 TEST_F(PositionFenTest, StandardFen) {
@@ -239,83 +256,85 @@ TEST_F(PositionFenTest, ParseCustomEngGameFen) {
 }
 
 TEST_F(PositionFenTest, ThrowsOnInvalidFEN) {
-    EXPECT_THROW(Position::from_fen("invalid fen"), std::invalid_argument)
-        << "Invalid FEN format.";
+    verify_invalid_fen(
+        "invalid fen",
+        "Invalid FEN: Invalid character in piece placement."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("rnbqkr/pppp4/7/7/8/8/4pppp/rnb w - - 0 1"),
-        std::invalid_argument
-    ) << "Invalid piece placement.";
+    verify_invalid_fen(
+        "rnbqkr/pppp4/7/7/8/8/4pppp/rnb w - - 0 1",
+        "Invalid FEN: Rank does not have 8 squares."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R x KQkq - 0 1"),
-        std::invalid_argument
-    ) << "Invalid side to move.";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R x KQkq - 0 1",
+        "Invalid FEN: Invalid active color."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w ~*&% - 0 1"),
-        std::invalid_argument
-    ) << "Invalid castling rights.";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w ~*&% - 0 1",
+        "Invalid FEN: Invalid castling rights character."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq i9 0 1"),
-        std::invalid_argument
-    ) << "Invalid en passant square.";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq i9 0 1",
+        "Invalid FEN: Invalid en passant square."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - -7 1"),
-        std::invalid_argument
-    ) << "Invalid halfmove clock (too low).";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - -7 1",
+        "Invalid FEN: Invalid halfmove clock."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 192 1"),
-        std::invalid_argument
-    ) << "Invalid halfmove clock (too high).";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 192 1",
+        "Invalid FEN: Invalid halfmove clock."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 0 0"),
-        std::invalid_argument
-    ) << "Invalid fullmove number (too low).";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 0 0",
+        "Invalid FEN: Invalid fullmove number."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 0 10532"),
-        std::invalid_argument
-    ) << "Invalid fullmove number (too high).";
+    verify_invalid_fen(
+        "r3k2r/p3p2p/8/8/8/8/P3P2P/R3K2R w KQkq - 0 10532",
+        "Invalid FEN: Invalid fullmove number."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("8/8/8/8/8/8/8/8 w - - 0 1"),
-        std::invalid_argument
-    ) << "Missing kings.";
+    verify_invalid_fen(
+        "8/8/8/8/8/8/8/8 w - - 0 1",
+        "Invalid FEN: Must have exactly one king per side."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("4k3/8/8/8/8/8/8/8 w - - 0 1"),
-        std::invalid_argument
-    ) << "Missing white king.";
+    verify_invalid_fen(
+        "4k3/8/8/8/8/8/8/8 w - - 0 1",
+        "Invalid FEN: Must have exactly one king per side."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("4K3/4K3/8/8/8/8/4k3/8 w - - 0 1"),
-        std::invalid_argument
-    ) << "Too many white kings.";
+    verify_invalid_fen(
+        "4K3/4K3/8/8/8/8/4k3/8 w - - 0 1",
+        "Invalid FEN: Must have exactly one king per side."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("P7/8/8/8/8/8/8/4k2K w - - 0 1"),
-        std::invalid_argument
-    ) << "Pawn on rank 8.";
+    verify_invalid_fen(
+        "P7/8/8/8/8/8/8/4k2K w - - 0 1",
+        "Invalid FEN: Pawn on rank 1 or 8."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("4k2K/8/8/8/8/8/8/p7 w - - 0 1"),
-        std::invalid_argument
-    ) << "Pawn on rank 1.";
+    verify_invalid_fen(
+        "4k2K/8/8/8/8/8/8/p7 w - - 0 1",
+        "Invalid FEN: Pawn on rank 1 or 8."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("8/8/8/8/8/8/4k3/4K3 w - - 0 1"),
-        std::invalid_argument
-    ) << "Opponent king in check (kings touching).";
+    verify_invalid_fen(
+        "8/8/8/8/8/8/4k3/4K3 w - - 0 1",
+        "Illegal FEN: Opponent king is currently in check."
+    );
 
-    EXPECT_THROW(
-        Position::from_fen("4k3/8/8/8/8/8/8/4R1K1 w - - 0 1"),
-        std::invalid_argument
-    ) << "Opponent king in check by rook.";
+    verify_invalid_fen(
+        "4k3/8/8/8/8/8/8/4R1K1 w - - 0 1",
+        "Illegal FEN: Opponent king is currently in check."
+    );
 }
 
 TEST_F(PositionFenTest, SanitizesCastlingRights) {

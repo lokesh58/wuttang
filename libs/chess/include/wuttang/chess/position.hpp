@@ -23,7 +23,7 @@ public:
     static constexpr std::string_view STANDARD_STARTING_FEN =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    static Position standard() noexcept;
+    static Position standard();
     static Position from_fen(std::string_view fen_string);
 
     std::string get_fen() const noexcept;
@@ -128,9 +128,6 @@ private:
         }();
 
     Position() noexcept;
-
-    static bool is_valid_fen(std::string_view fen_string) noexcept;
-    static Position from_valid_fen(std::string_view fen_string);
 
     void set_piece_at(Square square, Piece piece) noexcept {
         assert(static_cast<std::size_t>(square) < BOARD_SIZE);
