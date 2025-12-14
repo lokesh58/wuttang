@@ -5,6 +5,7 @@ target_sources(chess_tests
         test_bitboard.cpp
         test_color.cpp
         test_move_list.cpp
+        test_move_generator.cpp
         test_piece.cpp
         test_position.cpp
         test_square.cpp
