@@ -156,6 +156,8 @@ private:
         // Captures
         if constexpr (Type != MoveGenType::QUIETS) {
             const Bitboard them = pos.get_occupancy(invert(us));
+            const int left_offset = us == Color::WHITE ? -7 : 9;
+            const int right_offset = us == Color::WHITE ? -9 : 7;
 
             Bitboard left_captures;
             Bitboard right_captures;
@@ -176,44 +178,32 @@ private:
             Bitboard valid_left = left_captures & them;
             Bitboard valid_right = right_captures & them;
 
-            // Process Left (from pawn perspective)
-            for (Square to : valid_left) {
-                // White Left: +7. From = To - 7.
-                // Black Left: -9. From = To + 9.
-                Square from = shift(to, us == Color::WHITE ? -7 : 9);
-                if (Bitboard::from_square(to) & promotion_ranks) {
-                    add_promotion_moves(
-                        from,
-                        to,
-                        us,
-                        moves,
-                        pos.get_piece_at(to)
-                    );
-                } else {
-                    moves.push_back(
-                        Move::capture(from, to, pos.get_piece_at(to))
-                    );
-                }
+            // Process Left
+            Bitboard left_non_promotions = valid_left & ~promotion_ranks;
+            Bitboard left_promotions = valid_left & promotion_ranks;
+
+            for (Square to : left_non_promotions) {
+                Square from = shift(to, left_offset);
+                moves.push_back(Move::capture(from, to, pos.get_piece_at(to)));
+            }
+
+            for (Square to : left_promotions) {
+                Square from = shift(to, left_offset);
+                add_promotion_moves(from, to, us, moves, pos.get_piece_at(to));
             }
 
             // Process Right
-            for (Square to : valid_right) {
-                // White Right: +9. From = To - 9.
-                // Black Right: -7. From = To + 7.
-                Square from = shift(to, us == Color::WHITE ? -9 : 7);
-                if (Bitboard::from_square(to) & promotion_ranks) {
-                    add_promotion_moves(
-                        from,
-                        to,
-                        us,
-                        moves,
-                        pos.get_piece_at(to)
-                    );
-                } else {
-                    moves.push_back(
-                        Move::capture(from, to, pos.get_piece_at(to))
-                    );
-                }
+            Bitboard right_non_promotions = valid_right & ~promotion_ranks;
+            Bitboard right_promotions = valid_right & promotion_ranks;
+
+            for (Square to : right_non_promotions) {
+                Square from = shift(to, right_offset);
+                moves.push_back(Move::capture(from, to, pos.get_piece_at(to)));
+            }
+
+            for (Square to : right_promotions) {
+                Square from = shift(to, right_offset);
+                add_promotion_moves(from, to, us, moves, pos.get_piece_at(to));
             }
 
             // En Passant
@@ -221,11 +211,11 @@ private:
             if (ep_sq != Square::NO_SQ) {
                 Bitboard ep_bb = Bitboard::from_square(ep_sq);
                 if (left_captures & ep_bb) {
-                    Square from = shift(ep_sq, us == Color::WHITE ? -7 : 9);
+                    Square from = shift(ep_sq, left_offset);
                     moves.push_back(Move::en_passant(from, ep_sq));
                 }
                 if (right_captures & ep_bb) {
-                    Square from = shift(ep_sq, us == Color::WHITE ? -9 : 7);
+                    Square from = shift(ep_sq, right_offset);
                     moves.push_back(Move::en_passant(from, ep_sq));
                 }
             }
@@ -273,11 +263,10 @@ private:
     ) noexcept {
         const Bitboard pieces = pos.get_bitboard(us, PType);
         const Bitboard occupancy = pos.get_occupancy();
-        const Bitboard them = pos.get_occupancy(invert(us));
 
         Bitboard valid_targets;
         if constexpr (Type == MoveGenType::CAPTURES) {
-            valid_targets = them;
+            valid_targets = pos.get_occupancy(invert(us));
         } else if constexpr (Type == MoveGenType::QUIETS) {
             valid_targets = ~occupancy;
         } else {
