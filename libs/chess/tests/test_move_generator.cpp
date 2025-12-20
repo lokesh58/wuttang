@@ -122,43 +122,43 @@ TEST(MoveGenerator, MoveGenerationTypes) {
 
     // 1. CAPTURES
     MoveList captures;
-    MoveGenerator::generate<MoveGenType::CAPTURES>(pos, captures);
+    MoveGenerator::generate<MoveGenType::CAPTURE>(pos, captures);
     for (const auto& m : captures) {
         auto type = m.get_type();
         EXPECT_TRUE(
             type == MoveType::CAPTURE || type == MoveType::EN_PASSANT ||
             type == MoveType::PROMOTION_CAPTURE
-        ) << "Found non-capture move in CAPTURES generation: "
+        ) << "Found non-capture move in CAPTURE generation: "
           << static_cast<int>(type);
     }
 
     // 2. QUIETS
     MoveList quiets;
-    MoveGenerator::generate<MoveGenType::QUIETS>(pos, quiets);
+    MoveGenerator::generate<MoveGenType::QUIET>(pos, quiets);
     for (const auto& m : quiets) {
         auto type = m.get_type();
         EXPECT_TRUE(
             type == MoveType::QUIET || type == MoveType::DOUBLE_PAWN_PUSH ||
             type == MoveType::PROMOTION || type == MoveType::CASTLE_KINGSIDE ||
             type == MoveType::CASTLE_QUEENSIDE
-        ) << "Found capture move in QUIETS generation: "
+        ) << "Found capture move in QUIET generation: "
           << static_cast<int>(type);
     }
 
-    // 3. ALL (Pseudo-Legal)
-    MoveList all;
-    MoveGenerator::generate<MoveGenType::ALL>(pos, all);
+    // 3. PSEUDO_LEGALS
+    MoveList pseudo_legals;
+    MoveGenerator::generate<MoveGenType::PSEUDO_LEGAL>(pos, pseudo_legals);
 
-    // In this implementation, ALL should be exactly CAPTURES + QUIETS
-    // because MoveGenerator::generate<ALL> calls both helpers.
-    EXPECT_EQ(all.size(), captures.size() + quiets.size())
-        << "ALL count (" << all.size() << ") != CAPTURES (" << captures.size()
-        << ") + QUIETS (" << quiets.size() << ")";
+    // In this implementation, PSEUDO_LEGALS should be exactly CAPTURES + QUIETS
+    // because MoveGenerator::generate<PSEUDO_LEGAL> calls both helpers.
+    EXPECT_EQ(pseudo_legals.size(), captures.size() + quiets.size())
+        << "PSEUDO_LEGAL count (" << pseudo_legals.size() << ") != CAPTURE ("
+        << captures.size() << ") + QUIET (" << quiets.size() << ")";
 
     // 4. LEGAL
     MoveList legal;
     MoveGenerator::generate<MoveGenType::LEGAL>(pos, legal);
 
     // Legal moves must be a subset of Pseudo-Legal moves
-    EXPECT_LE(legal.size(), all.size());
+    EXPECT_LE(legal.size(), pseudo_legals.size());
 }

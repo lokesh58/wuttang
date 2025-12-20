@@ -16,10 +16,10 @@
 namespace wuttang::chess {
 
 enum class MoveGenType {
-    ALL,       // All pseudo-legal moves
-    LEGAL,     // All legal moves
-    CAPTURES,  // Pseudo-legal captures
-    QUIETS     // Pseudo-legal quiet moves
+    PSEUDO_LEGAL,  // All pseudo-legal moves
+    LEGAL,         // All legal moves
+    CAPTURE,       // Pseudo-legal captures
+    QUIET          // Pseudo-legal quiet moves
 };
 
 class MoveGenerator {
@@ -37,7 +37,7 @@ public:
         generate_moves_for_piece<Type, PieceType::QUEEN>(position, us, moves);
         generate_king_moves<Type>(position, us, moves);
 
-        if constexpr (Type != MoveGenType::CAPTURES) {
+        if constexpr (Type != MoveGenType::CAPTURE) {
             generate_castling_moves(position, us, moves);
         }
 
@@ -118,7 +118,7 @@ private:
         const Bitboard promotion_ranks = Bitboard::from_rank(Rank::RANK_1) |
                                          Bitboard::from_rank(Rank::RANK_8);
 
-        if constexpr (Type != MoveGenType::CAPTURES) {
+        if constexpr (Type != MoveGenType::CAPTURE) {
             const Bitboard occupancy = pos.get_occupancy();
             const std::int8_t UP = us == Color::WHITE ? 8 : -8;
 
@@ -155,7 +155,7 @@ private:
         }
 
         // Captures
-        if constexpr (Type != MoveGenType::QUIETS) {
+        if constexpr (Type != MoveGenType::QUIET) {
             const Bitboard them = pos.get_occupancy(invert(us));
             const int left_offset = us == Color::WHITE ? -7 : 9;
             const int right_offset = us == Color::WHITE ? -9 : 7;
@@ -266,9 +266,9 @@ private:
         const Bitboard occupancy = pos.get_occupancy();
 
         Bitboard valid_targets;
-        if constexpr (Type == MoveGenType::CAPTURES) {
+        if constexpr (Type == MoveGenType::CAPTURE) {
             valid_targets = pos.get_occupancy(invert(us));
-        } else if constexpr (Type == MoveGenType::QUIETS) {
+        } else if constexpr (Type == MoveGenType::QUIET) {
             valid_targets = ~occupancy;
         } else {
             valid_targets = ~pos.get_occupancy(us);
@@ -311,9 +311,9 @@ private:
         const Square from = king.lsb_square();
 
         Bitboard valid_targets;
-        if constexpr (Type == MoveGenType::CAPTURES) {
+        if constexpr (Type == MoveGenType::CAPTURE) {
             valid_targets = pos.get_occupancy(invert(us));
-        } else if constexpr (Type == MoveGenType::QUIETS) {
+        } else if constexpr (Type == MoveGenType::QUIET) {
             valid_targets = ~pos.get_occupancy();
         } else {
             valid_targets = ~pos.get_occupancy(us);
