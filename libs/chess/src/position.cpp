@@ -462,6 +462,7 @@ bool Position::is_well_formed_move(const Move& move) const noexcept {
 
 template<MoveType Type>
 void Position::make_well_formed_move(const Move& move) noexcept {
+    // Push back to history to store current status
     history_.push_back({
         .move = move,
         .en_passant_square = en_passant_square_,
@@ -470,90 +471,87 @@ void Position::make_well_formed_move(const Move& move) noexcept {
         .hash = hash_,
     });
 
+    // Remove en passant square and castling rights hash
     if (en_passant_square_ != Square::NO_SQ) {
         hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
     }
     hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
 
+    // Handle captures
+    if constexpr (Type == MoveType::CAPTURE ||
+                  Type == MoveType::PROMOTION_CAPTURE) {
+        remove_piece(move.get_to_square());
+    } else if constexpr (Type == MoveType::EN_PASSANT) {
+        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        remove_piece(shift(move.get_to_square(), offset));
+    }
+
+    // Handle piece movement
+    if constexpr (Type == MoveType::PROMOTION ||
+                  Type == MoveType::PROMOTION_CAPTURE) {
+        remove_piece(move.get_from_square());
+        add_piece(move.get_to_square(), move.get_promotion_piece());
+    } else if constexpr (Type != MoveType::NULL_MOVE) {
+        move_piece(move.get_from_square(), move.get_to_square());
+    }
+
+    // Handle castling rook moves
+    if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
+        const auto starting_rank =
+            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        move_piece(
+            get_square_from_file_rank(get_kingside_rook_file(), starting_rank),
+            get_square_from_file_rank(File::FILE_F, starting_rank)
+        );
+    } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
+        const auto starting_rank =
+            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        move_piece(
+            get_square_from_file_rank(get_queenside_rook_file(), starting_rank),
+            get_square_from_file_rank(File::FILE_D, starting_rank)
+        );
+    }
+
+    // Update halfmove clock
     if constexpr (Type == MoveType::QUIET) {
-        if (get_piece_type(get_piece_at(move.get_from_square())) ==
-            PieceType::PAWN) {
+        const auto moved_piece_type =
+            get_piece_type(get_piece_at(move.get_to_square()));
+        if (moved_piece_type == PieceType::PAWN) {
             halfmove_clock_ = 0;
         } else {
             halfmove_clock_ += 1;
         }
-        move_piece(move.get_from_square(), move.get_to_square());
-        en_passant_square_ = Square::NO_SQ;
-    } else if constexpr (Type == MoveType::CAPTURE) {
-        remove_piece(move.get_to_square());
-        move_piece(move.get_from_square(), move.get_to_square());
-        en_passant_square_ = Square::NO_SQ;
+    } else if constexpr (Type == MoveType::CAPTURE ||
+                         Type == MoveType::PROMOTION ||
+                         Type == MoveType::PROMOTION_CAPTURE ||
+                         Type == MoveType::EN_PASSANT ||
+                         Type == MoveType::DOUBLE_PAWN_PUSH) {
         halfmove_clock_ = 0;
-    } else if constexpr (Type == MoveType::DOUBLE_PAWN_PUSH) {
-        move_piece(move.get_from_square(), move.get_to_square());
-        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
-        en_passant_square_ = shift(move.get_to_square(), offset);
-        halfmove_clock_ = 0;
-    } else if constexpr (Type == MoveType::EN_PASSANT) {
-        move_piece(move.get_from_square(), move.get_to_square());
-        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
-        remove_piece(shift(move.get_to_square(), offset));
-        en_passant_square_ = Square::NO_SQ;
-        halfmove_clock_ = 0;
-    } else if constexpr (Type == MoveType::PROMOTION) {
-        remove_piece(move.get_from_square());
-        add_piece(move.get_to_square(), move.get_promotion_piece());
-        en_passant_square_ = Square::NO_SQ;
-        halfmove_clock_ = 0;
-    } else if constexpr (Type == MoveType::PROMOTION_CAPTURE) {
-        remove_piece(move.get_from_square());
-        remove_piece(move.get_to_square());
-        add_piece(move.get_to_square(), move.get_promotion_piece());
-        en_passant_square_ = Square::NO_SQ;
-        halfmove_clock_ = 0;
-    } else if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
-        move_piece(move.get_from_square(), move.get_to_square());
-        move_piece(
-            get_square_from_file_rank(
-                get_kingside_rook_file(),
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            ),
-            get_square_from_file_rank(
-                File::FILE_F,
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            )
-        );
-        en_passant_square_ = Square::NO_SQ;
-        halfmove_clock_ += 1;
-    } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
-        move_piece(move.get_from_square(), move.get_to_square());
-        move_piece(
-            get_square_from_file_rank(
-                get_queenside_rook_file(),
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            ),
-            get_square_from_file_rank(
-                File::FILE_D,
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            )
-        );
-        en_passant_square_ = Square::NO_SQ;
-        halfmove_clock_ += 1;
-    } else if constexpr (Type == MoveType::NULL_MOVE) {
-        en_passant_square_ = Square::NO_SQ;
+    } else {
         halfmove_clock_ += 1;
     }
 
+    // Update en passant square
+    if constexpr (Type == MoveType::DOUBLE_PAWN_PUSH) {
+        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        en_passant_square_ = shift(move.get_to_square(), offset);
+    } else {
+        en_passant_square_ = Square::NO_SQ;
+    }
+
+    // Update castling rights
     if constexpr (Type != MoveType::NULL_MOVE) {
         castling_rights_ &= get_castling_rights_mask(move.get_from_square()) &
                             get_castling_rights_mask(move.get_to_square());
     }
 
+    // Add back en passant square and castling rights hash
     if (en_passant_square_ != Square::NO_SQ) {
         hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
     }
     hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
 
+    // Update side_to_move
     side_to_move_ = invert(side_to_move_);
     hash_ ^= ZobristHash::get_side_to_move_key();
 }
@@ -562,76 +560,66 @@ template<MoveType Type>
 void Position::undo_last_move(const Move& move) noexcept {
     const auto& last_history_entry = history_.back();
 
+    // Update side_to_move
+    side_to_move_ = invert(side_to_move_);
+    hash_ ^= ZobristHash::get_side_to_move_key();
+
+    // Remove en passant square and castling rights hash
     if (en_passant_square_ != Square::NO_SQ) {
         hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
     }
     hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
 
+    // Restore history
     en_passant_square_ = last_history_entry.en_passant_square;
     castling_rights_ = last_history_entry.castling_rights;
     halfmove_clock_ = last_history_entry.halfmove_clock;
 
+    // Add back en passant square and castling rights hash
     if (en_passant_square_ != Square::NO_SQ) {
         hash_ ^= ZobristHash::get_en_passant_key(en_passant_square_);
     }
     hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
 
-    side_to_move_ = invert(side_to_move_);
-    hash_ ^= ZobristHash::get_side_to_move_key();
+    // Handle castling rook moves
+    if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
+        const auto starting_rank =
+            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        move_piece(
+            get_square_from_file_rank(File::FILE_F, starting_rank),
+            get_square_from_file_rank(get_kingside_rook_file(), starting_rank)
+        );
+    } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
+        const auto starting_rank =
+            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        move_piece(
+            get_square_from_file_rank(File::FILE_D, starting_rank),
+            get_square_from_file_rank(get_queenside_rook_file(), starting_rank)
+        );
+    }
 
-    if constexpr (Type == MoveType::QUIET) {
+    // Handle piece movement
+    if constexpr (Type == MoveType::PROMOTION ||
+                  Type == MoveType::PROMOTION_CAPTURE) {
+        remove_piece(move.get_to_square());
+        add_piece(
+            move.get_from_square(),
+            get_piece_from_color_type(side_to_move_, PieceType::PAWN)
+        );
+    } else if constexpr (Type != MoveType::NULL_MOVE) {
         move_piece(move.get_to_square(), move.get_from_square());
-    } else if constexpr (Type == MoveType::CAPTURE) {
-        move_piece(move.get_to_square(), move.get_from_square());
+    }
+
+    // Handle captures
+    if constexpr (Type == MoveType::CAPTURE ||
+                  Type == MoveType::PROMOTION_CAPTURE) {
         add_piece(move.get_to_square(), move.get_captured_piece());
-    } else if constexpr (Type == MoveType::DOUBLE_PAWN_PUSH) {
-        move_piece(move.get_to_square(), move.get_from_square());
     } else if constexpr (Type == MoveType::EN_PASSANT) {
         const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
         add_piece(
             shift(move.get_to_square(), offset),
             get_piece_from_color_type(invert(side_to_move_), PieceType::PAWN)
         );
-        move_piece(move.get_to_square(), move.get_from_square());
-    } else if constexpr (Type == MoveType::PROMOTION) {
-        remove_piece(move.get_to_square());
-        add_piece(
-            move.get_from_square(),
-            get_piece_from_color_type(side_to_move_, PieceType::PAWN)
-        );
-    } else if constexpr (Type == MoveType::PROMOTION_CAPTURE) {
-        remove_piece(move.get_to_square());
-        add_piece(move.get_to_square(), move.get_captured_piece());
-        add_piece(
-            move.get_from_square(),
-            get_piece_from_color_type(side_to_move_, PieceType::PAWN)
-        );
-    } else if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
-        move_piece(
-            get_square_from_file_rank(
-                File::FILE_F,
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            ),
-            get_square_from_file_rank(
-                get_kingside_rook_file(),
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            )
-        );
-        move_piece(move.get_to_square(), move.get_from_square());
-    } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
-        move_piece(
-            get_square_from_file_rank(
-                File::FILE_D,
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            ),
-            get_square_from_file_rank(
-                get_queenside_rook_file(),
-                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-            )
-        );
-        move_piece(move.get_to_square(), move.get_from_square());
-    } else if constexpr (Type == MoveType::NULL_MOVE) {
-        // No board changes for null move
     }
 }
 
