@@ -624,6 +624,7 @@ void Position::undo_last_move(const Move& move) noexcept {
 }
 
 void Position::add_piece(Square square, Piece piece) noexcept {
+    assert(get_piece_at(square) == Piece::NONE);
     set_piece_at(square, piece);
     hash_ ^= ZobristHash::get_piece_square_key(piece, square);
 
@@ -643,6 +644,8 @@ void Position::remove_piece(Square square) noexcept {
 
 void Position::move_piece(Square from_square, Square to_square) noexcept {
     const auto moving_piece = get_piece_at(from_square);
+    assert(moving_piece != Piece::NONE);
+    assert(get_piece_at(to_square) == Piece::NONE);
     set_piece_at(from_square, Piece::NONE);
     set_piece_at(to_square, moving_piece);
     hash_ ^= ZobristHash::get_piece_square_key(moving_piece, from_square);
