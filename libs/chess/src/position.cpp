@@ -381,12 +381,70 @@ std::string Position::get_fen() const noexcept {
 
 void Position::make_move(const Move& move) noexcept {
     assert(is_well_formed_move(move));
-    make_well_formed_move(move);
+    switch (move.get_type()) {
+        case MoveType::QUIET:
+            make_well_formed_move<MoveType::QUIET>(move);
+            break;
+        case MoveType::CAPTURE:
+            make_well_formed_move<MoveType::CAPTURE>(move);
+            break;
+        case MoveType::DOUBLE_PAWN_PUSH:
+            make_well_formed_move<MoveType::DOUBLE_PAWN_PUSH>(move);
+            break;
+        case MoveType::EN_PASSANT:
+            make_well_formed_move<MoveType::EN_PASSANT>(move);
+            break;
+        case MoveType::PROMOTION:
+            make_well_formed_move<MoveType::PROMOTION>(move);
+            break;
+        case MoveType::PROMOTION_CAPTURE:
+            make_well_formed_move<MoveType::PROMOTION_CAPTURE>(move);
+            break;
+        case MoveType::CASTLE_KINGSIDE:
+            make_well_formed_move<MoveType::CASTLE_KINGSIDE>(move);
+            break;
+        case MoveType::CASTLE_QUEENSIDE:
+            make_well_formed_move<MoveType::CASTLE_QUEENSIDE>(move);
+            break;
+        case MoveType::NULL_MOVE:
+            make_well_formed_move<MoveType::NULL_MOVE>(move);
+            break;
+    }
 }
 
 void Position::undo_last_move() noexcept {
     assert(history_.size() > 0);
-    undo_last_move_with_non_empty_history();
+    const auto& last_move = history_.back().move;
+    switch (last_move.get_type()) {
+        case MoveType::QUIET:
+            undo_last_move<MoveType::QUIET>(last_move);
+            break;
+        case MoveType::CAPTURE:
+            undo_last_move<MoveType::CAPTURE>(last_move);
+            break;
+        case MoveType::DOUBLE_PAWN_PUSH:
+            undo_last_move<MoveType::DOUBLE_PAWN_PUSH>(last_move);
+            break;
+        case MoveType::EN_PASSANT:
+            undo_last_move<MoveType::EN_PASSANT>(last_move);
+            break;
+        case MoveType::PROMOTION:
+            undo_last_move<MoveType::PROMOTION>(last_move);
+            break;
+        case MoveType::PROMOTION_CAPTURE:
+            undo_last_move<MoveType::PROMOTION_CAPTURE>(last_move);
+            break;
+        case MoveType::CASTLE_KINGSIDE:
+            undo_last_move<MoveType::CASTLE_KINGSIDE>(last_move);
+            break;
+        case MoveType::CASTLE_QUEENSIDE:
+            undo_last_move<MoveType::CASTLE_QUEENSIDE>(last_move);
+            break;
+        case MoveType::NULL_MOVE:
+            undo_last_move<MoveType::NULL_MOVE>(last_move);
+            break;
+    }
+    history_.pop_back();
 }
 
 bool Position::is_well_formed_move(const Move& move) const noexcept {
@@ -402,6 +460,7 @@ bool Position::is_well_formed_move(const Move& move) const noexcept {
     return true;
 }
 
+template<MoveType Type>
 void Position::make_well_formed_move(const Move& move) noexcept {
     history_.push_back({
         .move = move,
@@ -416,37 +475,76 @@ void Position::make_well_formed_move(const Move& move) noexcept {
     }
     hash_ ^= ZobristHash::get_castling_rights_key(castling_rights_);
 
-    switch (move.get_type()) {
-        case MoveType::QUIET:
-            make_quiet_move(move);
-            break;
-        case MoveType::CAPTURE:
-            make_capture_move(move);
-            break;
-        case MoveType::DOUBLE_PAWN_PUSH:
-            make_double_pawn_push_move(move);
-            break;
-        case MoveType::EN_PASSANT:
-            make_en_passant_move(move);
-            break;
-        case MoveType::PROMOTION:
-            make_promotion_move(move);
-            break;
-        case MoveType::PROMOTION_CAPTURE:
-            make_promotion_capture_move(move);
-            break;
-        case MoveType::CASTLE_KINGSIDE:
-            make_castle_kingside_move(move);
-            break;
-        case MoveType::CASTLE_QUEENSIDE:
-            make_castle_queenside_move(move);
-            break;
-        case MoveType::NULL_MOVE:
-            make_null_move();
-            break;
+    if constexpr (Type == MoveType::QUIET) {
+        if (get_piece_type(get_piece_at(move.get_from_square())) ==
+            PieceType::PAWN) {
+            halfmove_clock_ = 0;
+        } else {
+            halfmove_clock_ += 1;
+        }
+        move_piece(move.get_from_square(), move.get_to_square());
+        en_passant_square_ = Square::NO_SQ;
+    } else if constexpr (Type == MoveType::CAPTURE) {
+        remove_piece(move.get_to_square());
+        move_piece(move.get_from_square(), move.get_to_square());
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ = 0;
+    } else if constexpr (Type == MoveType::DOUBLE_PAWN_PUSH) {
+        move_piece(move.get_from_square(), move.get_to_square());
+        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        en_passant_square_ = shift(move.get_to_square(), offset);
+        halfmove_clock_ = 0;
+    } else if constexpr (Type == MoveType::EN_PASSANT) {
+        move_piece(move.get_from_square(), move.get_to_square());
+        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        remove_piece(shift(move.get_to_square(), offset));
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ = 0;
+    } else if constexpr (Type == MoveType::PROMOTION) {
+        remove_piece(move.get_from_square());
+        add_piece(move.get_to_square(), move.get_promotion_piece());
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ = 0;
+    } else if constexpr (Type == MoveType::PROMOTION_CAPTURE) {
+        remove_piece(move.get_from_square());
+        remove_piece(move.get_to_square());
+        add_piece(move.get_to_square(), move.get_promotion_piece());
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ = 0;
+    } else if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
+        move_piece(move.get_from_square(), move.get_to_square());
+        move_piece(
+            get_square_from_file_rank(
+                get_kingside_rook_file(),
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            ),
+            get_square_from_file_rank(
+                File::FILE_F,
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            )
+        );
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ += 1;
+    } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
+        move_piece(move.get_from_square(), move.get_to_square());
+        move_piece(
+            get_square_from_file_rank(
+                get_queenside_rook_file(),
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            ),
+            get_square_from_file_rank(
+                File::FILE_D,
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            )
+        );
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ += 1;
+    } else if constexpr (Type == MoveType::NULL_MOVE) {
+        en_passant_square_ = Square::NO_SQ;
+        halfmove_clock_ += 1;
     }
 
-    if (move.get_type() != MoveType::NULL_MOVE) {
+    if constexpr (Type != MoveType::NULL_MOVE) {
         castling_rights_ &= get_castling_rights_mask(move.get_from_square()) &
                             get_castling_rights_mask(move.get_to_square());
     }
@@ -460,7 +558,8 @@ void Position::make_well_formed_move(const Move& move) noexcept {
     hash_ ^= ZobristHash::get_side_to_move_key();
 }
 
-void Position::undo_last_move_with_non_empty_history() noexcept {
+template<MoveType Type>
+void Position::undo_last_move(const Move& move) noexcept {
     const auto& last_history_entry = history_.back();
 
     if (en_passant_square_ != Square::NO_SQ) {
@@ -480,194 +579,60 @@ void Position::undo_last_move_with_non_empty_history() noexcept {
     side_to_move_ = invert(side_to_move_);
     hash_ ^= ZobristHash::get_side_to_move_key();
 
-    const auto& move = last_history_entry.move;
-    switch (move.get_type()) {
-        case MoveType::QUIET:
-            undo_quiet_move(move);
-            break;
-        case MoveType::CAPTURE:
-            undo_capture_move(move);
-            break;
-        case MoveType::DOUBLE_PAWN_PUSH:
-            undo_double_pawn_push_move(move);
-            break;
-        case MoveType::EN_PASSANT:
-            undo_en_passant_move(move);
-            break;
-        case MoveType::PROMOTION:
-            undo_promotion_move(move);
-            break;
-        case MoveType::PROMOTION_CAPTURE:
-            undo_promotion_capture_move(move);
-            break;
-        case MoveType::CASTLE_KINGSIDE:
-            undo_castle_kingside_move(move);
-            break;
-        case MoveType::CASTLE_QUEENSIDE:
-            undo_castle_queenside_move(move);
-            break;
-        case MoveType::NULL_MOVE:
-            undo_null_move();
-            break;
+    if constexpr (Type == MoveType::QUIET) {
+        move_piece(move.get_to_square(), move.get_from_square());
+    } else if constexpr (Type == MoveType::CAPTURE) {
+        move_piece(move.get_to_square(), move.get_from_square());
+        add_piece(move.get_to_square(), move.get_captured_piece());
+    } else if constexpr (Type == MoveType::DOUBLE_PAWN_PUSH) {
+        move_piece(move.get_to_square(), move.get_from_square());
+    } else if constexpr (Type == MoveType::EN_PASSANT) {
+        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        add_piece(
+            shift(move.get_to_square(), offset),
+            get_piece_from_color_type(invert(side_to_move_), PieceType::PAWN)
+        );
+        move_piece(move.get_to_square(), move.get_from_square());
+    } else if constexpr (Type == MoveType::PROMOTION) {
+        remove_piece(move.get_to_square());
+        add_piece(
+            move.get_from_square(),
+            get_piece_from_color_type(side_to_move_, PieceType::PAWN)
+        );
+    } else if constexpr (Type == MoveType::PROMOTION_CAPTURE) {
+        remove_piece(move.get_to_square());
+        add_piece(move.get_to_square(), move.get_captured_piece());
+        add_piece(
+            move.get_from_square(),
+            get_piece_from_color_type(side_to_move_, PieceType::PAWN)
+        );
+    } else if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
+        move_piece(
+            get_square_from_file_rank(
+                File::FILE_F,
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            ),
+            get_square_from_file_rank(
+                get_kingside_rook_file(),
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            )
+        );
+        move_piece(move.get_to_square(), move.get_from_square());
+    } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
+        move_piece(
+            get_square_from_file_rank(
+                File::FILE_D,
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            ),
+            get_square_from_file_rank(
+                get_queenside_rook_file(),
+                side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
+            )
+        );
+        move_piece(move.get_to_square(), move.get_from_square());
+    } else if constexpr (Type == MoveType::NULL_MOVE) {
+        // No board changes for null move
     }
-
-    history_.pop_back();
-}
-
-void Position::make_quiet_move(const Move& move) noexcept {
-    if (get_piece_type(get_piece_at(move.get_from_square())) ==
-        PieceType::PAWN) {
-        halfmove_clock_ = 0;
-    } else {
-        halfmove_clock_ += 1;
-    }
-    move_piece(move.get_from_square(), move.get_to_square());
-    en_passant_square_ = Square::NO_SQ;
-}
-
-void Position::undo_quiet_move(const Move& move) noexcept {
-    move_piece(move.get_to_square(), move.get_from_square());
-}
-
-void Position::make_capture_move(const Move& move) noexcept {
-    remove_piece(move.get_to_square());
-    move_piece(move.get_from_square(), move.get_to_square());
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ = 0;
-}
-
-void Position::undo_capture_move(const Move& move) noexcept {
-    move_piece(move.get_to_square(), move.get_from_square());
-    add_piece(move.get_to_square(), move.get_captured_piece());
-}
-
-void Position::make_double_pawn_push_move(const Move& move) noexcept {
-    move_piece(move.get_from_square(), move.get_to_square());
-    const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
-    en_passant_square_ = shift(move.get_to_square(), offset);
-    halfmove_clock_ = 0;
-}
-
-void Position::undo_double_pawn_push_move(const Move& move) noexcept {
-    move_piece(move.get_to_square(), move.get_from_square());
-}
-
-void Position::make_en_passant_move(const Move& move) noexcept {
-    move_piece(move.get_from_square(), move.get_to_square());
-    const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
-    remove_piece(shift(move.get_to_square(), offset));
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ = 0;
-}
-
-void Position::undo_en_passant_move(const Move& move) noexcept {
-    const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
-    add_piece(
-        shift(move.get_to_square(), offset),
-        get_piece_from_color_type(invert(side_to_move_), PieceType::PAWN)
-    );
-    move_piece(move.get_to_square(), move.get_from_square());
-}
-
-void Position::make_promotion_move(const Move& move) noexcept {
-    remove_piece(move.get_from_square());
-    add_piece(move.get_to_square(), move.get_promotion_piece());
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ = 0;
-}
-
-void Position::undo_promotion_move(const Move& move) noexcept {
-    remove_piece(move.get_to_square());
-    add_piece(
-        move.get_from_square(),
-        get_piece_from_color_type(side_to_move_, PieceType::PAWN)
-    );
-}
-
-void Position::make_promotion_capture_move(const Move& move) noexcept {
-    remove_piece(move.get_from_square());
-    remove_piece(move.get_to_square());
-    add_piece(move.get_to_square(), move.get_promotion_piece());
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ = 0;
-}
-
-void Position::undo_promotion_capture_move(const Move& move) noexcept {
-    remove_piece(move.get_to_square());
-    add_piece(move.get_to_square(), move.get_captured_piece());
-    add_piece(
-        move.get_from_square(),
-        get_piece_from_color_type(side_to_move_, PieceType::PAWN)
-    );
-}
-
-void Position::make_castle_kingside_move(const Move& move) noexcept {
-    move_piece(move.get_from_square(), move.get_to_square());
-    move_piece(
-        get_square_from_file_rank(
-            get_kingside_rook_file(),
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        ),
-        get_square_from_file_rank(
-            File::FILE_F,
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        )
-    );
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ += 1;
-}
-
-void Position::undo_castle_kingside_move(const Move& move) noexcept {
-    move_piece(
-        get_square_from_file_rank(
-            File::FILE_F,
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        ),
-        get_square_from_file_rank(
-            get_kingside_rook_file(),
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        )
-    );
-    move_piece(move.get_to_square(), move.get_from_square());
-}
-
-void Position::make_castle_queenside_move(const Move& move) noexcept {
-    move_piece(move.get_from_square(), move.get_to_square());
-    move_piece(
-        get_square_from_file_rank(
-            get_queenside_rook_file(),
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        ),
-        get_square_from_file_rank(
-            File::FILE_D,
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        )
-    );
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ += 1;
-}
-
-void Position::undo_castle_queenside_move(const Move& move) noexcept {
-    move_piece(
-        get_square_from_file_rank(
-            File::FILE_D,
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        ),
-        get_square_from_file_rank(
-            get_queenside_rook_file(),
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8
-        )
-    );
-    move_piece(move.get_to_square(), move.get_from_square());
-}
-
-void Position::make_null_move() noexcept {
-    en_passant_square_ = Square::NO_SQ;
-    halfmove_clock_ += 1;
-}
-
-void Position::undo_null_move() noexcept {
-    // No board changes for null move
 }
 
 void Position::add_piece(Square square, Piece piece) noexcept {
