@@ -451,12 +451,41 @@ bool Position::is_well_formed_move(const Move& move) const noexcept {
     if (move.get_type() == MoveType::NULL_MOVE)
         return true;
     const auto moving_piece = get_piece_at(move.get_from_square());
-    if (moving_piece == Piece::NONE)
-        return false;
     if (get_piece_color(moving_piece) != side_to_move_)
         return false;
     if (get_piece_at(move.get_to_square()) != move.get_captured_piece())
         return false;
+    switch (move.get_type()) {
+        case MoveType::DOUBLE_PAWN_PUSH:
+        case MoveType::PROMOTION:
+        case MoveType::PROMOTION_CAPTURE: {
+            if (get_piece_type(moving_piece) != PieceType::PAWN) {
+                return false;
+            }
+            break;
+        }
+        case MoveType::EN_PASSANT: {
+            if (get_piece_type(moving_piece) != PieceType::PAWN) {
+                return false;
+            }
+            const auto expected_capture = get_piece_from_color_type(
+                invert(side_to_move_),
+                PieceType::PAWN
+            );
+            const auto offset = get_en_passant_capture_offset();
+            const auto actual_piece =
+                get_piece_at(shift(move.get_to_square(), offset));
+            if (actual_piece != expected_capture) {
+                return false;
+            }
+            break;
+        }
+        case MoveType::CASTLE_KINGSIDE:
+        case MoveType::CASTLE_QUEENSIDE:
+            break;
+        default:
+            break;
+    }
     return true;
 }
 
@@ -482,7 +511,7 @@ void Position::make_well_formed_move(const Move& move) noexcept {
                   Type == MoveType::PROMOTION_CAPTURE) {
         remove_piece(move.get_to_square());
     } else if constexpr (Type == MoveType::EN_PASSANT) {
-        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        const auto offset = get_en_passant_capture_offset();
         remove_piece(shift(move.get_to_square(), offset));
     }
 
@@ -533,7 +562,7 @@ void Position::make_well_formed_move(const Move& move) noexcept {
 
     // Update en passant square
     if constexpr (Type == MoveType::DOUBLE_PAWN_PUSH) {
-        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        const auto offset = get_en_passant_capture_offset();
         en_passant_square_ = shift(move.get_to_square(), offset);
     } else {
         en_passant_square_ = Square::NO_SQ;
@@ -615,7 +644,7 @@ void Position::undo_last_move(const Move& move) noexcept {
                   Type == MoveType::PROMOTION_CAPTURE) {
         add_piece(move.get_to_square(), move.get_captured_piece());
     } else if constexpr (Type == MoveType::EN_PASSANT) {
-        const auto offset = side_to_move_ == Color::WHITE ? -8 : 8;
+        const auto offset = get_en_passant_capture_offset();
         add_piece(
             shift(move.get_to_square(), offset),
             get_piece_from_color_type(invert(side_to_move_), PieceType::PAWN)

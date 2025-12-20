@@ -138,6 +138,9 @@ private:
     void add_piece(Square square, Piece piece) noexcept;
     void remove_piece(Square square) noexcept;
     void move_piece(Square from_square, Square to_square) noexcept;
+    std::int8_t get_en_passant_capture_offset() const noexcept {
+        return side_to_move_ == Color::WHITE ? -8 : 8;
+    }
 
     bool is_square_attacked(
         Square sq,
