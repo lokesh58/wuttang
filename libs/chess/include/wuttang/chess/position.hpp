@@ -141,6 +141,9 @@ private:
     std::int8_t get_en_passant_capture_offset() const noexcept {
         return side_to_move_ == Color::WHITE ? -8 : 8;
     }
+    Rank get_starting_rank() const noexcept {
+        return side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+    }
 
     bool is_square_attacked(
         Square sq,

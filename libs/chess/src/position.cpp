@@ -481,8 +481,24 @@ bool Position::is_well_formed_move(const Move& move) const noexcept {
             break;
         }
         case MoveType::CASTLE_KINGSIDE:
-        case MoveType::CASTLE_QUEENSIDE:
+        case MoveType::CASTLE_QUEENSIDE: {
+            if (get_piece_type(moving_piece) != PieceType::KING) {
+                return false;
+            }
+            const auto expected_piece =
+                get_piece_from_color_type(side_to_move_, PieceType::ROOK);
+            const auto starting_rank = get_starting_rank();
+            const auto rook_file = move.get_type() == MoveType::CASTLE_KINGSIDE
+                                       ? get_kingside_rook_file()
+                                       : get_queenside_rook_file();
+            const auto rook_sq =
+                get_square_from_file_rank(rook_file, starting_rank);
+            const auto actual_piece = get_piece_at(rook_sq);
+            if (actual_piece != expected_piece) {
+                return false;
+            }
             break;
+        }
         default:
             break;
     }
@@ -526,15 +542,13 @@ void Position::make_well_formed_move(const Move& move) noexcept {
 
     // Handle castling rook moves
     if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
-        const auto starting_rank =
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        const auto starting_rank = get_starting_rank();
         move_piece(
             get_square_from_file_rank(get_kingside_rook_file(), starting_rank),
             get_square_from_file_rank(File::FILE_F, starting_rank)
         );
     } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
-        const auto starting_rank =
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        const auto starting_rank = get_starting_rank();
         move_piece(
             get_square_from_file_rank(get_queenside_rook_file(), starting_rank),
             get_square_from_file_rank(File::FILE_D, starting_rank)
@@ -612,15 +626,13 @@ void Position::undo_last_move(const Move& move) noexcept {
 
     // Handle castling rook moves
     if constexpr (Type == MoveType::CASTLE_KINGSIDE) {
-        const auto starting_rank =
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        const auto starting_rank = get_starting_rank();
         move_piece(
             get_square_from_file_rank(File::FILE_F, starting_rank),
             get_square_from_file_rank(get_kingside_rook_file(), starting_rank)
         );
     } else if constexpr (Type == MoveType::CASTLE_QUEENSIDE) {
-        const auto starting_rank =
-            side_to_move_ == Color::WHITE ? Rank::RANK_1 : Rank::RANK_8;
+        const auto starting_rank = get_starting_rank();
         move_piece(
             get_square_from_file_rank(File::FILE_D, starting_rank),
             get_square_from_file_rank(get_queenside_rook_file(), starting_rank)
