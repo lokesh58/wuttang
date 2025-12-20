@@ -1,0 +1,104 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <wuttang/utils/enum_range.hpp>
+#include <wuttang/utils/enum_shift.hpp>
+
+namespace wuttang::chess {
+
+// clang-format off
+
+enum class File : std::uint8_t {
+    FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
+    FILE_CNT,
+    FILE_INVALID = FILE_CNT,
+};
+
+enum class Rank : std::uint8_t {
+    RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
+    RANK_CNT,
+    RANK_INVALID = RANK_CNT,
+};
+
+enum class Square : std::uint8_t {
+    A1, B1, C1, D1, E1, F1, G1, H1,
+    A2, B2, C2, D2, E2, F2, G2, H2,
+    A3, B3, C3, D3, E3, F3, G3, H3,
+    A4, B4, C4, D4, E4, F4, G4, H4,
+    A5, B5, C5, D5, E5, F5, G5, H5,
+    A6, B6, C6, D6, E6, F6, G6, H6,
+    A7, B7, C7, D7, E7, F7, G7, H7,
+    A8, B8, C8, D8, E8, F8, G8, H8,
+    NO_SQ,
+};
+
+// clang-format on
+
+using wuttang::utils::shift;  // Expose shift in chess namespace
+
+inline constexpr Square get_square_from_file_rank(
+    File square_file,
+    Rank square_rank
+) noexcept {
+    return static_cast<Square>(
+        static_cast<std::uint8_t>(square_rank) *
+            static_cast<std::uint8_t>(File::FILE_CNT) +
+        static_cast<std::uint8_t>(square_file)
+    );
+}
+
+inline constexpr File get_square_file(Square square) noexcept {
+    return static_cast<File>(
+        static_cast<std::uint8_t>(square) %
+        static_cast<std::uint8_t>(File::FILE_CNT)
+    );
+}
+
+inline constexpr Rank get_square_rank(Square square) noexcept {
+    return static_cast<Rank>(
+        static_cast<std::uint8_t>(square) /
+        static_cast<std::uint8_t>(File::FILE_CNT)
+    );
+}
+
+using FileRange = wuttang::utils::EnumRange<File, File::FILE_A, File::FILE_H>;
+using RankRange = wuttang::utils::EnumRange<Rank, Rank::RANK_1, Rank::RANK_8>;
+using SquareRange = wuttang::utils::EnumRange<Square, Square::A1, Square::H8>;
+
+inline std::string to_string(Square s) noexcept {
+    const auto file = get_square_file(s);
+    const auto rank = get_square_rank(s);
+
+    std::string str = "??";
+    str[0] = static_cast<char>('a' + static_cast<int>(file));
+    str[1] = static_cast<char>('1' + static_cast<int>(rank));
+
+    return str;
+}
+
+}  // namespace wuttang::chess
+
+template<>
+struct wuttang::utils::EnumTraits<wuttang::chess::File> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = wuttang::chess::File::FILE_A;
+    static constexpr auto max = wuttang::chess::File::FILE_H;
+    static constexpr auto sentinel = wuttang::chess::File::FILE_INVALID;
+};
+
+template<>
+struct wuttang::utils::EnumTraits<wuttang::chess::Rank> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = wuttang::chess::Rank::RANK_1;
+    static constexpr auto max = wuttang::chess::Rank::RANK_8;
+    static constexpr auto sentinel = wuttang::chess::Rank::RANK_INVALID;
+};
+
+template<>
+struct wuttang::utils::EnumTraits<wuttang::chess::Square> {
+    using ArithmeticType = std::int8_t;
+    static constexpr auto min = wuttang::chess::Square::A1;
+    static constexpr auto max = wuttang::chess::Square::H8;
+    static constexpr auto sentinel = wuttang::chess::Square::NO_SQ;
+};
