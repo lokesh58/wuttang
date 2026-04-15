@@ -6,9 +6,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Add compiler warnings
+# Add compiler warnings and enable exceptions for MSVC
 if(MSVC)
-    add_compile_options(/W4)
+    add_compile_options(/W4 /EHsc /utf-8)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
